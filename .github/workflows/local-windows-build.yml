@@ -53,8 +53,21 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      - name: Build packaging tool
+        run: dotnet build Content.Packaging --configuration Release --no-restore --nologo
+
+      - name: Copy packaging tool outside the repository
+        shell: pwsh
+        run: |
+          $toolPath = Join-Path $env:RUNNER_TEMP "Content.Packaging"
+          New-Item -ItemType Directory -Path $toolPath -Force | Out-Null
+          Copy-Item -Path "Content.Packaging/bin/Release/net10.0/*" -Destination $toolPath -Recurse -Force
+
       - name: Package local server with client content
-        run: dotnet run --project Content.Packaging server --hybrid-acz --platform win-x64 --configuration Release
+        shell: pwsh
+        run: |
+          $packager = Join-Path $env:RUNNER_TEMP "Content.Packaging/Content.Packaging.dll"
+          dotnet $packager server --hybrid-acz --platform win-x64 --configuration Release
 
       - name: Prepare downloadable build
         shell: pwsh
