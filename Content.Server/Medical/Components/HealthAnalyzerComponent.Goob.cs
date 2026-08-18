@@ -1,4 +1,5 @@
 using Content.Shared.Radio;
+using Robust.Shared.Audio;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
@@ -11,6 +12,22 @@ public sealed partial class HealthAnalyzerComponent
     /// </summary>
     [DataField]
     public TimeSpan MedicalRecordUploadCooldown = TimeSpan.FromMinutes(1);
+
+    /// <summary>
+    /// Sound played when scanning or uploading an examination fails.
+    /// </summary>
+    [DataField]
+    public SoundSpecifier ErrorSound = new SoundCollectionSpecifier("CargoError");
+
+    /// <summary>
+    /// Prevents the error sound from being spammed.
+    /// </summary>
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    [AutoPausedField]
+    public TimeSpan NextErrorSound = TimeSpan.Zero;
+
+    [DataField]
+    public TimeSpan ErrorSoundDelay = TimeSpan.FromSeconds(2);
 
     [DataField]
     public ProtoId<RadioChannelPrototype> MedicalRecordChannel = "Medical";

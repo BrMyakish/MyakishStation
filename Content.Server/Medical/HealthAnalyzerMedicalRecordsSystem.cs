@@ -47,6 +47,7 @@ using Content.Shared._Shitmed.Medical.Surgery.Wounds.Systems;
 using Robust.Server.GameObjects;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
+using Robust.Shared.Utility;
 
 namespace Content.Server.Medical;
 
@@ -61,6 +62,7 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
     [Dependency] private readonly SharedBodySystem _body = default!;
     [Dependency] private readonly BloodstreamSystem _bloodstream = default!;
     [Dependency] private readonly GameTicker _ticker = default!;
+    [Dependency] private readonly HealthAnalyzerSystem _healthAnalyzer = default!;
     [Dependency] private readonly IdCardSystem _idCard = default!;
     [Dependency] private readonly MedicalRecordsSystem _medicalRecords = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
@@ -94,27 +96,27 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
         var user = msg.Actor;
         if (ent.Comp.ScannedBy != user || !_access.FindAccessTags(user).Contains(MedicalAccess))
         {
-            Popup(ent, user, "health-analyzer-medical-record-no-access");
+            Reject(ent, user, Loc.GetString("health-analyzer-medical-record-no-access"));
             return;
         }
 
         if (ent.Comp.ScannedEntity is not { } target || Deleted(target) ||
             !HasComp<BodyComponent>(target) || !_power.HasDrawCharge(ent.Owner, user: user))
         {
-            Popup(ent, user, "health-analyzer-medical-record-no-active-scan");
+            Reject(ent, user, Loc.GetString("health-analyzer-medical-record-no-active-scan"));
             return;
         }
 
         if (ent.Comp.MaxScanRange is { } range &&
             !_transform.InRange(Transform(target).Coordinates, Transform(ent).Coordinates, range))
         {
-            Popup(ent, user, "health-analyzer-medical-record-out-of-range");
+            Reject(ent, user, Loc.GetString("health-analyzer-medical-record-out-of-range"));
             return;
         }
 
-        if (!TryGetIdRecord(target, out var patientKey, out var patient))
+        if (!TryGetPatientRecord(ent, target, out var patientKey, out var patient))
         {
-            Popup(ent, user, "health-analyzer-medical-record-missing-id");
+            Reject(ent, user, Loc.GetString("health-analyzer-medical-record-missing-patient-record"));
             return;
         }
 
@@ -131,11 +133,7 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
         if (_cooldowns.TryGetValue(patientKey, out var nextUpload) && nextUpload > _timing.CurTime)
         {
             var seconds = Math.Max(1, (int) Math.Ceiling((nextUpload - _timing.CurTime).TotalSeconds));
-            _popup.PopupEntity(
-                Loc.GetString("health-analyzer-medical-record-cooldown", ("seconds", seconds)),
-                ent,
-                user,
-                PopupType.MediumCaution);
+            Reject(ent, user, Loc.GetString("health-analyzer-medical-record-cooldown", ("seconds", seconds)));
             return;
         }
 
@@ -150,7 +148,7 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
                 examinerJob,
                 report))
         {
-            Popup(ent, user, "health-analyzer-medical-record-save-failed");
+            Reject(ent, user, Loc.GetString("health-analyzer-medical-record-save-failed"));
             return;
         }
 
@@ -184,23 +182,30 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
         return false;
     }
 
-    private bool TryGetIdRecord(
-        EntityUid entity,
+    private bool TryGetPatientRecord(
+        Entity<HealthAnalyzerComponent> analyzer,
+        EntityUid patient,
         out StationRecordKey key,
         out GeneralStationRecord record)
     {
         key = default;
         record = default!;
 
-        if (!_idCard.TryFindIdCard(entity, out var idCard) ||
-            !TryComp<StationRecordKeyStorageComponent>(idCard.Owner, out var storage) ||
-            storage.Key is not { } storedKey ||
-            !_records.TryGetRecord(storedKey, out GeneralStationRecord? foundRecord))
+        if (_station.GetOwningStation(analyzer) is not { } station)
+            return false;
+
+        // Identify the scanned mob itself, not whichever ID card it happens to be carrying.
+        var patientName = MetaData(patient).EntityName;
+        if (_records.GetRecordByName(station, patientName) is not { } id)
+            return false;
+
+        var foundKey = new StationRecordKey(id, station);
+        if (!_records.TryGetRecord(foundKey, out GeneralStationRecord? foundRecord))
         {
             return false;
         }
 
-        key = storedKey;
+        key = foundKey;
         record = foundRecord;
         return true;
     }
@@ -227,7 +232,9 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
         AppendOrgans(report, target);
         AppendChemicals(report, target);
 
-        return report.ToString().TrimEnd();
+        // Analyzer localization may contain UI markup (for example colored warnings),
+        // while saved medical reports are deliberately plain text.
+        return FormattedMessage.RemoveMarkupPermissive(report.ToString().TrimEnd());
     }
 
     private void AppendStatus(StringBuilder report, EntityUid target)
@@ -512,5 +519,15 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
         PopupType type = PopupType.MediumCaution)
     {
         _popup.PopupEntity(Loc.GetString(loc), analyzer, user, type);
+    }
+
+    private void Reject(
+        Entity<HealthAnalyzerComponent> analyzer,
+        EntityUid user,
+        string message)
+    {
+        _popup.PopupEntity(message, analyzer, user, PopupType.MediumCaution);
+
+        _healthAnalyzer.PlayErrorSound(analyzer);
     }
 }

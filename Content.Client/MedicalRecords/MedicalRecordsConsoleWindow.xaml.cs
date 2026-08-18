@@ -241,6 +241,8 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
 
     private static bool IsSupportedFilter(StationRecordFilterType type)
     {
-        return type is not StationRecordFilterType.DNA and not StationRecordFilterType.Species;
+        return type is not StationRecordFilterType.DNA
+            and not StationRecordFilterType.Species
+            and not StationRecordFilterType.Prints;
     }
 }

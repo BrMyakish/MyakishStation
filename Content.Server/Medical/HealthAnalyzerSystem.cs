@@ -137,7 +137,10 @@ public sealed class HealthAnalyzerSystem : EntitySystem
     private void OnAfterInteract(Entity<HealthAnalyzerComponent> uid, ref AfterInteractEvent args)
     {
         if (args.Target == null || !args.CanReach || !HasComp<MobStateComponent>(args.Target) || !_cell.HasDrawCharge(uid.Owner, user: args.User))
+        {
+            PlayErrorSound(uid);
             return;
+        }
 
         _audio.PlayPvs(uid.Comp.ScanningBeginSound, uid);
 
@@ -156,8 +159,14 @@ public sealed class HealthAnalyzerSystem : EntitySystem
 
     private void OnDoAfter(Entity<HealthAnalyzerComponent> uid, ref HealthAnalyzerDoAfterEvent args)
     {
-        if (args.Handled || args.Cancelled || args.Target == null || !_cell.HasDrawCharge(uid.Owner, user: args.User))
+        if (args.Handled)
             return;
+
+        if (args.Cancelled || args.Target == null || !_cell.HasDrawCharge(uid.Owner, user: args.User))
+        {
+            PlayErrorSound(uid);
+            return;
+        }
 
         if (!uid.Comp.Silent)
             _audio.PlayPvs(uid.Comp.ScanningEndSound, uid);
@@ -166,6 +175,18 @@ public sealed class HealthAnalyzerSystem : EntitySystem
         OpenUserInterface(args.User, uid);
         BeginAnalyzingEntity(uid, args.Target.Value);
         args.Handled = true;
+    }
+
+    /// <summary>
+    /// Plays the analyzer's rate-limited failure sound.
+    /// </summary>
+    public void PlayErrorSound(Entity<HealthAnalyzerComponent> analyzer)
+    {
+        if (_timing.CurTime < analyzer.Comp.NextErrorSound)
+            return;
+
+        analyzer.Comp.NextErrorSound = _timing.CurTime + analyzer.Comp.ErrorSoundDelay;
+        _audio.PlayPvs(analyzer.Comp.ErrorSound, analyzer);
     }
 
     /// <summary>

@@ -59,7 +59,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
 
     private void OnFilterChanged(Entity<MedicalRecordsConsoleComponent> ent, ref SetStationRecordFilter msg)
     {
-        if (msg.Type is StationRecordFilterType.DNA or StationRecordFilterType.Species)
+        if (msg.Type is StationRecordFilterType.DNA or StationRecordFilterType.Species or StationRecordFilterType.Prints)
             return;
 
         if (ent.Comp.Filter?.Type == msg.Type && ent.Comp.Filter.Value == msg.Value)
@@ -78,7 +78,8 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         if (notes.Length > ent.Comp.MaxNoteLength)
             return;
 
-        _medicalRecords.TrySetNotes(key, notes);
+        if (_medicalRecords.TrySetNotes(key, notes))
+            UpdateUi(ent);
     }
 
     private void OnUpdateExamination(Entity<MedicalRecordsConsoleComponent> ent, ref MedicalRecordUpdateExaminationMessage msg)
@@ -91,7 +92,8 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         if (title.Length < 1 || title.Length > ent.Comp.MaxTitleLength || note.Length > ent.Comp.MaxNoteLength)
             return;
 
-        _medicalRecords.TryUpdateExamination(key, msg.Id, title, note);
+        if (_medicalRecords.TryUpdateExamination(key, msg.Id, title, note))
+            UpdateUi(ent);
     }
 
     private void OnDeleteExamination(Entity<MedicalRecordsConsoleComponent> ent, ref MedicalRecordDeleteExaminationMessage msg)
@@ -99,7 +101,8 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         if (!TryGetEditableKey(ent, msg.Actor, out var key))
             return;
 
-        _medicalRecords.TryDeleteExamination(key, msg.Id);
+        if (_medicalRecords.TryDeleteExamination(key, msg.Id))
+            UpdateUi(ent);
     }
 
     private bool TryGetEditableKey(
