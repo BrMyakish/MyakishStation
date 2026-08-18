@@ -73,6 +73,68 @@ jobs:
         shell: pwsh
         run: Expand-Archive -Path release/SS14.Server_win-x64.zip -DestinationPath local-win-x64 -Force
 
+      - name: Smoke test packaged server
+        shell: pwsh
+        run: |
+          $server = Join-Path $PWD "local-win-x64/Robust.Server.exe"
+          if (-not (Test-Path $server)) {
+            throw "Packaged server executable was not found: $server"
+          }
+
+          $dataPath = Join-Path $env:RUNNER_TEMP "server-data"
+          $stdout = Join-Path $env:RUNNER_TEMP "server-stdout.log"
+          $stderr = Join-Path $env:RUNNER_TEMP "server-stderr.log"
+          New-Item -ItemType Directory -Path $dataPath -Force | Out-Null
+
+          $process = Start-Process `
+            -FilePath $server `
+            -WorkingDirectory (Split-Path $server) `
+            -ArgumentList @("--data-dir", $dataPath) `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
+
+          try {
+            $ready = $false
+            for ($second = 0; $second -lt 120; $second++) {
+              Start-Sleep -Seconds 1
+
+              if (Test-Path $stdout) {
+                $output = Get-Content $stdout -Raw -ErrorAction SilentlyContinue
+                if ($output -match "Server Version .* -> Ready") {
+                  $ready = $true
+                  break
+                }
+              }
+
+              if ($process.HasExited) {
+                break
+              }
+            }
+
+            if (Test-Path $stdout) {
+              Get-Content $stdout
+            }
+            if (Test-Path $stderr) {
+              Get-Content $stderr
+            }
+
+            if (-not $ready) {
+              if ($process.HasExited) {
+                throw "Packaged server exited before becoming ready (exit code $($process.ExitCode))."
+              }
+
+              throw "Packaged server did not become ready within 120 seconds."
+            }
+
+            Write-Host "Packaged server reached the ready state successfully."
+          }
+          finally {
+            if (-not $process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+            }
+          }
+
       - name: Upload local build
         uses: actions/upload-artifact@v4.6.2
         with:
