@@ -41,6 +41,8 @@ using Content.Shared.Mobs.Systems;
 using Content.Shared.Damage;
 using Content.Server.Chat.Systems;
 using Content.Shared.Chat;
+using Content.Shared.Eye.Blinding.Components;
+using Content.Shared._Shitmed.Medical.Surgery.Steps.Parts;
 
 namespace Content.Server.Medical;
 
@@ -310,6 +312,15 @@ public sealed class HealthAnalyzerSystem : EntitySystem
 
         // Goobstation start
         var bodyStatus = _woundSystem.GetDamageableStatesOnBody(target); // Goob
+        var openIncisions = FetchOpenIncisions(body);
+        var weldingEyeDamage = 0;
+        var weldingEyeDamageMax = 0;
+        if (TryComp<BlindableComponent>(target, out var blindable))
+        {
+            // Permanent blindness/poor vision lives in the card as a trait, not in a dynamic scan.
+            weldingEyeDamage = Math.Max(0, blindable.EyeDamage - blindable.MinDamage);
+            weldingEyeDamageMax = Math.Max(0, blindable.MaxDamage - blindable.MinDamage);
+        }
         Dictionary<TargetBodyPart, bool> bleeding; // Goobstation - removed unnecessary allocation
 
         var vitalDamage = FixedPoint2.Zero;
@@ -337,6 +348,9 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     traumas,
                     pain,
                     bloodLow, // Goobstation
+                    openIncisions,
+                    weldingEyeDamage,
+                    weldingEyeDamageMax,
                     part != null ? GetNetEntity(part) : null
                 ));
                 break;
@@ -352,7 +366,10 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bleeding,
                     vitalDamage, // Goobstation
                     bodyStatus,
-                    organs
+                    organs,
+                    openIncisions,
+                    weldingEyeDamage,
+                    weldingEyeDamageMax
                 ));
                 break;
 
@@ -367,10 +384,28 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bleeding,
                     vitalDamage, // Goobstation
                     bodyStatus,
-                    chemicals
+                    chemicals,
+                    openIncisions,
+                    weldingEyeDamage,
+                    weldingEyeDamageMax
                 ));
                 break;
         }
+    }
+
+    private HashSet<TargetBodyPart> FetchOpenIncisions(BodyComponent body)
+    {
+        var openIncisions = new HashSet<TargetBodyPart>();
+        if (body.RootContainer.ContainedEntity is not { } rootPart)
+            return openIncisions;
+
+        foreach (var (woundable, _) in _woundSystem.GetAllWoundableChildren(rootPart))
+        {
+            if (HasComp<IncisionOpenComponent>(woundable))
+                openIncisions.Add(_bodySystem.GetTargetBodyPart(woundable));
+        }
+
+        return openIncisions;
     }
 
     private void FetchBodyData(EntityUid target,

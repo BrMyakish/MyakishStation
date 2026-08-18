@@ -30,3 +30,17 @@ condition-body-bleeding-LeftHand = • Кровотечение из левой 
 condition-body-bleeding-RightHand = • Кровотечение из правой кисти у { $entity }.
 condition-body-bleeding-LeftFoot = • Кровотечение из левой стопы у { $entity }.
 condition-body-bleeding-RightFoot = • Кровотечение из правой стопы у { $entity }.
+
+health-analyzer-upload-medical-record = Загрузить в медкарту
+health-analyzer-condition-welding-blindness = • Сварочная слепота ({ $damage }/{ $maximum }).
+health-analyzer-condition-open-incision-Head = • Незакрытый разрез на голове.
+health-analyzer-condition-open-incision-Chest = • Незакрытый разрез на груди.
+health-analyzer-condition-open-incision-Groin = • Незакрытый разрез в паховой области.
+health-analyzer-condition-open-incision-LeftArm = • Незакрытый разрез на левой руке.
+health-analyzer-condition-open-incision-RightArm = • Незакрытый разрез на правой руке.
+health-analyzer-condition-open-incision-LeftLeg = • Незакрытый разрез на левой ноге.
+health-analyzer-condition-open-incision-RightLeg = • Незакрытый разрез на правой ноге.
+health-analyzer-condition-open-incision-LeftHand = • Незакрытый разрез на левой кисти.
+health-analyzer-condition-open-incision-RightHand = • Незакрытый разрез на правой кисти.
+health-analyzer-condition-open-incision-LeftFoot = • Незакрытый разрез на левой стопе.
+health-analyzer-condition-open-incision-RightFoot = • Незакрытый разрез на правой стопе.

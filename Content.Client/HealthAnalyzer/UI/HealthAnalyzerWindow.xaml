@@ -308,6 +308,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     </BoxContainer>
                 </BoxContainer>
             </ScrollContainer>
-    </BoxContainer>
+        </BoxContainer>
+        <PanelContainer StyleClasses="LowDivider" />
+        <Button Name="UploadToMedicalRecordButton"
+                Text="{Loc 'health-analyzer-upload-medical-record'}"
+                Margin="8 8 8 8"
+                HorizontalExpand="True"
+                Disabled="True" />
     </BoxContainer>
 </controls:FancyWindow>

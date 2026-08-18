@@ -49,6 +49,7 @@ namespace Content.Client.HealthAnalyzer.UI
         private readonly WoundSystem _wound;
         public event Action<TargetBodyPart?, EntityUid>? OnBodyPartSelected;
         public event Action<HealthAnalyzerMode, EntityUid>? OnModeChanged;
+        public event Action? OnUploadToMedicalRecord;
         private EntityUid _spriteViewEntity;
 
         [ValidatePrototypeId<EntityPrototype>]
@@ -93,6 +94,7 @@ namespace Content.Client.HealthAnalyzer.UI
             BodyButton.OnPressed += _ => SetMode(HealthAnalyzerMode.Body);
             OrgansButton.OnPressed += _ => SetMode(HealthAnalyzerMode.Organs);
             ChemicalsButton.OnPressed += _ => SetMode(HealthAnalyzerMode.Chemicals);
+            UploadToMedicalRecordButton.OnPressed += _ => OnUploadToMedicalRecord?.Invoke();
             // Shitmed Change End
         }
 
@@ -132,6 +134,7 @@ namespace Content.Client.HealthAnalyzer.UI
             if (_target is null)
             {
                 NoPatientDataText.Visible = true;
+                UploadToMedicalRecordButton.Disabled = true;
                 return false;
             }
 
@@ -148,6 +151,7 @@ namespace Content.Client.HealthAnalyzer.UI
                 : Loc.GetString("health-analyzer-window-entity-unknown-text");
 
             ScanModeLabel.FontColorOverride = msg.ScanMode.HasValue && msg.ScanMode.Value ? Color.Green : Color.Red;
+            UploadToMedicalRecordButton.Disabled = msg.ScanMode != true;
 
             // Patient Information
 
@@ -243,6 +247,7 @@ namespace Content.Client.HealthAnalyzer.UI
             }
 
             ConditionsListContainer.RemoveAllChildren();
+            DrawGeneralConditions(msg);
 
             // Goob start - low blood alert
             if (msg.BloodLevelLow)
@@ -344,6 +349,7 @@ namespace Content.Client.HealthAnalyzer.UI
             DamageLabel.Visible = false;
 
             ConditionsListContainer.RemoveAllChildren();
+            DrawGeneralConditions(msg);
             GroupsContainer.RemoveAllChildren();
             foreach (var (organ, data) in msg.Organs)
             {
@@ -397,15 +403,42 @@ namespace Content.Client.HealthAnalyzer.UI
             DamageLabel.Visible = false;
 
             ConditionsListContainer.RemoveAllChildren();
+            DrawGeneralConditions(msg);
             GroupsContainer.RemoveAllChildren();
 
             DrawSolutionDiagnostics(msg.Solutions);
 
-            ConditionsListContainer.AddChild(new RichTextLabel
+            if (ConditionsListContainer.ChildCount == 0)
             {
-                Text = Loc.GetString("condition-none"),
-                Margin = new Thickness(0, 4),
-            });
+                ConditionsListContainer.AddChild(new RichTextLabel
+                {
+                    Text = Loc.GetString("condition-none"),
+                    Margin = new Thickness(0, 4),
+                });
+            }
+        }
+
+        private void DrawGeneralConditions(HealthAnalyzerBaseMessage msg)
+        {
+            foreach (var bodyPart in msg.OpenIncisions)
+            {
+                ConditionsListContainer.AddChild(new RichTextLabel
+                {
+                    Text = Loc.GetString($"health-analyzer-condition-open-incision-{bodyPart}"),
+                    Margin = new Thickness(0, 4),
+                });
+            }
+
+            if (msg.WeldingEyeDamage > 0)
+            {
+                ConditionsListContainer.AddChild(new RichTextLabel
+                {
+                    Text = Loc.GetString("health-analyzer-condition-welding-blindness",
+                        ("damage", msg.WeldingEyeDamage),
+                        ("maximum", msg.WeldingEyeDamageMax)),
+                    Margin = new Thickness(0, 4),
+                });
+            }
         }
 
         private bool TryGetEntityName(NetEntity ent, out string name)
