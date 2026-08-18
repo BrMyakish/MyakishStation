@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server.Medical.Components;
+using Content.Shared.Access;
+using Content.Shared.Access.Systems;
 using Content.Shared.Body.Components;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Damage.Components;
@@ -43,11 +45,15 @@ using Content.Server.Chat.Systems;
 using Content.Shared.Chat;
 using Content.Shared.Eye.Blinding.Components;
 using Content.Shared._Shitmed.Medical.Surgery.Steps.Parts;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server.Medical;
 
 public sealed class HealthAnalyzerSystem : EntitySystem
 {
+    private static readonly ProtoId<AccessLevelPrototype> MedicalAccess = "Medical";
+
+    [Dependency] private readonly AccessReaderSystem _access = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly PowerCellSystem _cell = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
@@ -156,6 +162,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
         if (!uid.Comp.Silent)
             _audio.PlayPvs(uid.Comp.ScanningEndSound, uid);
 
+        uid.Comp.ScannedBy = args.User;
         OpenUserInterface(args.User, uid);
         BeginAnalyzingEntity(uid, args.Target.Value);
         args.Handled = true;
@@ -222,6 +229,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
     {
         //Unlink the analyzer
         healthAnalyzer.Comp.ScannedEntity = null;
+        healthAnalyzer.Comp.ScannedBy = null;
         healthAnalyzer.Comp.CurrentBodyPart = null; // Shitmed Change
         _toggle.TryDeactivate(healthAnalyzer.Owner);
 
@@ -321,6 +329,10 @@ public sealed class HealthAnalyzerSystem : EntitySystem
             weldingEyeDamage = Math.Max(0, blindable.EyeDamage - blindable.MinDamage);
             weldingEyeDamageMax = Math.Max(0, blindable.MaxDamage - blindable.MinDamage);
         }
+
+        var canUploadMedicalRecord = analyzerComp.ScannedBy is { } scannedBy &&
+                                     !Deleted(scannedBy) &&
+                                     _access.FindAccessTags(scannedBy).Contains(MedicalAccess);
         Dictionary<TargetBodyPart, bool> bleeding; // Goobstation - removed unnecessary allocation
 
         var vitalDamage = FixedPoint2.Zero;
@@ -341,6 +353,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bodyTemperature,
                     bloodAmount,
                     scanMode,
+                    canUploadMedicalRecord,
                     unrevivable,
                     bodyStatus,
                     bleeding,
@@ -363,6 +376,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bodyTemperature,
                     bloodAmount,
                     scanMode,
+                    canUploadMedicalRecord,
                     bleeding,
                     vitalDamage, // Goobstation
                     bodyStatus,
@@ -381,6 +395,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bodyTemperature,
                     bloodAmount,
                     scanMode,
+                    canUploadMedicalRecord,
                     bleeding,
                     vitalDamage, // Goobstation
                     bodyStatus,

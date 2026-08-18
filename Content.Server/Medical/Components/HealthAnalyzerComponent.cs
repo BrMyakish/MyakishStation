@@ -42,6 +42,12 @@ public sealed partial class HealthAnalyzerComponent : Component
     public EntityUid? ScannedEntity;
 
     /// <summary>
+    /// The user who performed the active scan. Medical-record uploads are authorized against this entity.
+    /// </summary>
+    [DataField]
+    public EntityUid? ScannedBy;
+
+    /// <summary>
     /// Shitmed Change: The body part that is currently being scanned.
     /// </summary>
     [DataField]

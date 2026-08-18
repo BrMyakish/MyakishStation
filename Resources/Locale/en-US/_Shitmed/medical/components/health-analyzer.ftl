@@ -39,7 +39,7 @@ condition-body-bleeding-LeftFoot = • {$entity}'s left foot is bleeding.
 condition-body-bleeding-RightFoot = • {$entity}'s right foot is bleeding.
 
 health-analyzer-upload-medical-record = Upload to medical record
-health-analyzer-condition-welding-blindness = • Welding blindness ({ $damage }/{ $maximum }).
+health-analyzer-condition-welding-blindness = • Welding blindness.
 health-analyzer-condition-open-incision-Head = • Open incision on the head.
 health-analyzer-condition-open-incision-Chest = • Open incision on the chest.
 health-analyzer-condition-open-incision-Groin = • Open incision in the groin area.

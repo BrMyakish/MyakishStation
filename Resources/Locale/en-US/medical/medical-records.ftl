@@ -1,4 +1,6 @@
 medical-records-console-title = Medical records
+medical-records-console-flavor-left = Contraindications may apply; consultation with a specialist is required.
+medical-records-console-flavor-right = v1.3
 medical-records-console-filter-placeholder = Filter value
 medical-records-console-search = Search
 medical-records-console-reset = Reset
@@ -23,9 +25,10 @@ medical-records-console-examination-meta = { $time } · { $examiner } ({ $job })
 medical-records-permission-denied = Medical access is required to edit medical records.
 
 health-analyzer-medical-record-no-access = Medical access is required to upload an examination.
+health-analyzer-medical-record-no-access-tooltip = The scan was performed by someone without Medical access.
 health-analyzer-medical-record-no-active-scan = There is no active examination to save.
 health-analyzer-medical-record-out-of-range = The patient is too far away from the analyzer.
-health-analyzer-medical-record-missing-id = The patient's or examiner's record could not be read from their ID card.
+health-analyzer-medical-record-missing-id = The patient's medical record could not be read from their ID card.
 health-analyzer-medical-record-cooldown = This patient's next examination can be saved in { $seconds } seconds.
 health-analyzer-medical-record-save-failed = The examination could not be saved to the medical record.
 health-analyzer-medical-record-saved = The examination was saved to the medical record.

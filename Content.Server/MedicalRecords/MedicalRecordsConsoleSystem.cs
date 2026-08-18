@@ -59,6 +59,9 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
 
     private void OnFilterChanged(Entity<MedicalRecordsConsoleComponent> ent, ref SetStationRecordFilter msg)
     {
+        if (msg.Type is StationRecordFilterType.DNA or StationRecordFilterType.Species)
+            return;
+
         if (ent.Comp.Filter?.Type == msg.Type && ent.Comp.Filter.Value == msg.Value)
             return;
 

@@ -1,4 +1,6 @@
 medical-records-console-title = Медицинские карты
+medical-records-console-flavor-left = Имеются противопоказания необходима консультация специалиста.
+medical-records-console-flavor-right = v1.3
 medical-records-console-filter-placeholder = Значение фильтра
 medical-records-console-search = Поиск
 medical-records-console-reset = Сбросить
@@ -23,9 +25,10 @@ medical-records-console-examination-meta = { $time } · { $examiner } ({ $job })
 medical-records-permission-denied = Для изменения медицинских карт требуется медицинский доступ.
 
 health-analyzer-medical-record-no-access = Для загрузки обследования требуется медицинский доступ.
+health-analyzer-medical-record-no-access-tooltip = Сканирование выполнено сотрудником без медицинского доступа.
 health-analyzer-medical-record-no-active-scan = Нет активного обследования для сохранения.
 health-analyzer-medical-record-out-of-range = Пациент находится слишком далеко от анализатора.
-health-analyzer-medical-record-missing-id = Не удалось получить медицинскую карту по ID-карте пациента или врача.
+health-analyzer-medical-record-missing-id = Не удалось получить медицинскую карту по ID-карте пациента.
 health-analyzer-medical-record-cooldown = Повторное обследование этого пациента можно сохранить через { $seconds } сек.
 health-analyzer-medical-record-save-failed = Не удалось сохранить обследование в медицинской карте.
 health-analyzer-medical-record-saved = Обследование сохранено в медицинской карте.

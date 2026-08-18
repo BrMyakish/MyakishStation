@@ -151,7 +151,10 @@ namespace Content.Client.HealthAnalyzer.UI
                 : Loc.GetString("health-analyzer-window-entity-unknown-text");
 
             ScanModeLabel.FontColorOverride = msg.ScanMode.HasValue && msg.ScanMode.Value ? Color.Green : Color.Red;
-            UploadToMedicalRecordButton.Disabled = msg.ScanMode != true;
+            UploadToMedicalRecordButton.Disabled = msg.ScanMode != true || !msg.CanUploadMedicalRecord;
+            UploadToMedicalRecordButton.ToolTip = msg.ScanMode == true && !msg.CanUploadMedicalRecord
+                ? Loc.GetString("health-analyzer-medical-record-no-access-tooltip")
+                : null;
 
             // Patient Information
 
@@ -433,9 +436,7 @@ namespace Content.Client.HealthAnalyzer.UI
             {
                 ConditionsListContainer.AddChild(new RichTextLabel
                 {
-                    Text = Loc.GetString("health-analyzer-condition-welding-blindness",
-                        ("damage", msg.WeldingEyeDamage),
-                        ("maximum", msg.WeldingEyeDamageMax)),
+                    Text = Loc.GetString("health-analyzer-condition-welding-blindness"),
                     Margin = new Thickness(0, 4),
                 });
             }

@@ -54,7 +54,7 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
         _prototypes = prototypes;
         _access = access;
 
-        foreach (var type in Enum.GetValues<StationRecordFilterType>())
+        foreach (var type in Enum.GetValues<StationRecordFilterType>().Where(IsSupportedFilter))
             FilterType.AddItem(Loc.GetString($"general-station-record-{type.ToString().ToLower()}-filter"), (int) type);
 
         FilterType.OnItemSelected += args =>
@@ -123,7 +123,7 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
     {
         _populating = true;
 
-        if (state.Filter != null)
+        if (state.Filter != null && IsSupportedFilter(state.Filter.Type))
         {
             _currentFilter = state.Filter.Type;
             FilterText.Text = state.Filter.Value;
@@ -237,5 +237,10 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
     {
         if (!_populating)
             OnFiltersChanged?.Invoke(_currentFilter, FilterText.Text);
+    }
+
+    private static bool IsSupportedFilter(StationRecordFilterType type)
+    {
+        return type is not StationRecordFilterType.DNA and not StationRecordFilterType.Species;
     }
 }
