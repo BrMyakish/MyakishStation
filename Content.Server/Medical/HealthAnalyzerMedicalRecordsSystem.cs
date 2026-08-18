@@ -305,9 +305,9 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
                 if (!damageable.Damage.DamageDict.TryGetValue(type, out var typeAmount) || typeAmount <= 0)
                     continue;
 
-                var typeName = _prototypes.TryIndex(type, out DamageTypePrototype? typePrototype)
+                string typeName = _prototypes.TryIndex(type, out DamageTypePrototype? typePrototype)
                     ? typePrototype.LocalizedName
-                    : type;
+                    : type.Id;
                 report.AppendLine(" · " + Loc.GetString("health-analyzer-window-damage-type-text",
                     ("damageType", typeName), ("amount", typeAmount)));
             }
