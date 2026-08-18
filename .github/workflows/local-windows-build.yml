@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Local Windows Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ master ]
+    types: [ opened, reopened, synchronize ]
+    paths:
+      - '.github/workflows/local-windows-build.yml'
+      - 'Content.Client/HealthAnalyzer/**'
+      - 'Content.Client/MedicalRecords/**'
+      - 'Content.Server/Medical/**'
+      - 'Content.Server/MedicalRecords/**'
+      - 'Content.Shared/MedicalRecords/**'
+      - 'Content.Shared/_Shitmed/Medical/HealthAnalyzer/**'
+      - 'Resources/Locale/en-US/medical/**'
+      - 'Resources/Locale/ru-RU/medical/**'
+      - 'Resources/Locale/en-US/_Shitmed/medical/components/health-analyzer.ftl'
+      - 'Resources/Locale/ru-RU/_Shitmed/medical/components/health-analyzer.ftl'
+      - 'Resources/Prototypes/Entities/Structures/Machines/Computers/computers.yml'
+
+concurrency:
+  group: local-windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package win-x64 local server
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          submodules: recursive
+
+      - name: Pull engine updates
+        uses: space-wizards/submodule-dependency@v0.1.5
+
+      - name: Update engine submodules
+        run: git -C RobustToolbox submodule update --init --recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4.1.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Package local server with client content
+        run: dotnet run --project Content.Packaging server --hybrid-acz --platform win-x64 --configuration Release
+
+      - name: Prepare downloadable build
+        shell: pwsh
+        run: Expand-Archive -Path release/SS14.Server_win-x64.zip -DestinationPath local-win-x64 -Force
+
+      - name: Upload local build
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: MyakishStation-MedicalRecords-Test-win-x64
+          path: local-win-x64
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
