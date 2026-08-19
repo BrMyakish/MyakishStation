@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using Content.Shared.Access;
 using Content.Shared.Access.Components;
 using Content.Shared.Examine;
 using Content.Shared.Hands.Components;
 using Content.Shared.Inventory;
+using Content.Shared.MedicalRecords;
 using Content.Shared.Overlays;
 using Content.Shared.PDA;
 using Content.Shared.Verbs;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
 namespace Content.Shared.Access.Systems;
 
 public sealed class IdExaminableSystem : EntitySystem
 {
+    private static readonly ProtoId<AccessLevelPrototype> MedicalAccess = "Medical";
+
     [Dependency] private readonly ExamineSystemShared _examineSystem = default!;
     [Dependency] private readonly InventorySystem _inventorySystem = default!;
 
@@ -50,20 +55,35 @@ public sealed class IdExaminableSystem : EntitySystem
         args.Verbs.Add(verb);
 
         // Goobstation-WantedMenu-Start
-        if (!CanAccessWantedMenu(args.User, uid))
-            return;
-
-        var wantedVerb = new ExamineVerb()
+        if (CanAccessWantedMenu(args.User, uid))
         {
-            Act = () => OpenWantedUI(args.User, uid),
-            Text = Loc.GetString("criminal-verb-name"),
-            Category = VerbCategory.Examine,
-            Disabled = !detailsRange,
-            Message = detailsRange ? null : Loc.GetString("id-examinable-component-verb-disabled"),
-            Icon = new SpriteSpecifier.Texture(new("/Textures/_Goobstation/Interface/VerbIcons/wanted.png")),
-            Priority = 1,
-        };
-        args.Verbs.Add(wantedVerb);
+            var wantedVerb = new ExamineVerb()
+            {
+                Act = () => OpenWantedUI(args.User, uid),
+                Text = Loc.GetString("criminal-verb-name"),
+                Category = VerbCategory.Examine,
+                Disabled = !detailsRange,
+                Message = detailsRange ? null : Loc.GetString("id-examinable-component-verb-disabled"),
+                Icon = new SpriteSpecifier.Texture(new("/Textures/_Goobstation/Interface/VerbIcons/wanted.png")),
+                Priority = 1,
+            };
+            args.Verbs.Add(wantedVerb);
+        }
+
+        if (CanAccessMedicalNotes(args.User))
+        {
+            var medicalVerb = new ExamineVerb()
+            {
+                Act = () => OpenMedicalNotesUI(args.User, uid),
+                Text = Loc.GetString("medical-notes-verb-name"),
+                Category = VerbCategory.Examine,
+                Disabled = !detailsRange,
+                Message = detailsRange ? null : Loc.GetString("id-examinable-component-verb-disabled"),
+                Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/plus.svg.192dpi.png")),
+                Priority = 2,
+            };
+            args.Verbs.Add(medicalVerb);
+        }
         // Goobstation-WantedMenu-End
     }
 
@@ -71,16 +91,30 @@ public sealed class IdExaminableSystem : EntitySystem
             IdExaminableComponent comp,
             GetVerbsEvent<AlternativeVerb> args) // Goobstation-WantedMenu; Alternate activate in world hotkey
     {
-        if (!args.CanInteract || !args.CanAccess || !CanAccessWantedMenu(args.User, uid))
+        if (!args.CanInteract || !args.CanAccess)
             return;
 
-        args.Verbs.Add(new AlternativeVerb()
+        if (CanAccessWantedMenu(args.User, uid))
         {
-            Act = () => OpenWantedUI(args.User, uid),
-            Text = Loc.GetString("criminal-verb-name"),
-            Icon = new SpriteSpecifier.Texture(new("/Textures/_Goobstation/Interface/VerbIcons/wanted.png")),
-            Priority = 3
-        });
+            args.Verbs.Add(new AlternativeVerb()
+            {
+                Act = () => OpenWantedUI(args.User, uid),
+                Text = Loc.GetString("criminal-verb-name"),
+                Icon = new SpriteSpecifier.Texture(new("/Textures/_Goobstation/Interface/VerbIcons/wanted.png")),
+                Priority = 3
+            });
+        }
+
+        if (CanAccessMedicalNotes(args.User))
+        {
+            args.Verbs.Add(new AlternativeVerb()
+            {
+                Act = () => OpenMedicalNotesUI(args.User, uid),
+                Text = Loc.GetString("medical-notes-verb-name"),
+                Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/plus.svg.192dpi.png")),
+                Priority = 4
+            });
+        }
     }
 
     private bool CanAccessWantedMenu(EntityUid user, EntityUid target) // Goobstation-WantedMenu
@@ -101,6 +135,19 @@ public sealed class IdExaminableSystem : EntitySystem
     private void OpenWantedUI(EntityUid uid, EntityUid target) // Goobstation-WantedMenu
     {
         _ui.TryToggleUi(target, SetWantedVerbMenu.Key, uid);
+    }
+
+    /// <summary>
+    /// Medical notes can only be accessed by a user whose carried ID or PDA grants Medical access.
+    /// </summary>
+    public bool CanAccessMedicalNotes(EntityUid user)
+    {
+        return _accessReader.FindAccessTags(user).Contains(MedicalAccess);
+    }
+
+    private void OpenMedicalNotesUI(EntityUid user, EntityUid target)
+    {
+        _ui.TryToggleUi(target, MedicalNotesUiKey.Key, user);
     }
 
     public string GetMessage(EntityUid uid)

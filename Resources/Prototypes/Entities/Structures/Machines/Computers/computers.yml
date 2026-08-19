@@ -368,6 +368,25 @@
   name: medical records computer
   description: This can be used to check medical records.
   components:
+  - type: MedicalRecordsConsole
+  - type: UserInterface
+    interfaces:
+      enum.MedicalRecordsConsoleKey.Key:
+        type: MedicalRecordsConsoleBoundUserInterface
+      enum.WiresUiKey.Key:
+        type: WiresBoundUserInterface
+  - type: ActivatableUI
+    key: enum.MedicalRecordsConsoleKey.Key
+  - type: EmitSoundOnUIOpen
+    sound:
+      collection: Keyboard
+      params:
+        volume: 1
+        variation: 0.10
+        pitch: 1.10
+    blacklist:
+      tags:
+      - NoConsoleSound
   - type: Sprite
     layers:
     - map: ["computerLayerBody"]
@@ -386,6 +405,8 @@
     color: "#1f8c28"
   - type: Computer
     board: MedicalRecordsComputerCircuitboard
+  - type: AccessReader
+    access: [["Medical"]]
 
 - type: entity
   parent: BaseComputerAiAccess

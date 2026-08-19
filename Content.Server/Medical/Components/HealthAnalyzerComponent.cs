@@ -13,7 +13,7 @@ namespace Content.Server.Medical.Components;
 /// Requires <c>ItemToggleComponent</c>.
 /// </remarks>
 [RegisterComponent, AutoGenerateComponentPause]
-[Access(typeof(HealthAnalyzerSystem), typeof(CryoPodSystem))]
+[Access(typeof(HealthAnalyzerSystem), typeof(HealthAnalyzerMedicalRecordsSystem), typeof(CryoPodSystem))]
 public sealed partial class HealthAnalyzerComponent : Component
 {
     /// <summary>
@@ -40,6 +40,12 @@ public sealed partial class HealthAnalyzerComponent : Component
     /// </summary>
     [DataField]
     public EntityUid? ScannedEntity;
+
+    /// <summary>
+    /// The user who performed the active scan. Medical-record uploads are authorized against this entity.
+    /// </summary>
+    [DataField]
+    public EntityUid? ScannedBy;
 
     /// <summary>
     /// Shitmed Change: The body part that is currently being scanned.

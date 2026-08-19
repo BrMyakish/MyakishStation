@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server.Medical.Components;
+using Content.Shared.Access;
+using Content.Shared.Access.Systems;
 using Content.Shared.Body.Components;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Damage.Components;
@@ -41,11 +43,16 @@ using Content.Shared.Mobs.Systems;
 using Content.Shared.Damage;
 using Content.Server.Chat.Systems;
 using Content.Shared.Chat;
+using Content.Shared._Shitmed.Medical.Surgery.Steps.Parts;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server.Medical;
 
 public sealed class HealthAnalyzerSystem : EntitySystem
 {
+    private static readonly ProtoId<AccessLevelPrototype> MedicalAccess = "Medical";
+
+    [Dependency] private readonly AccessReaderSystem _access = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly PowerCellSystem _cell = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
@@ -129,7 +136,10 @@ public sealed class HealthAnalyzerSystem : EntitySystem
     private void OnAfterInteract(Entity<HealthAnalyzerComponent> uid, ref AfterInteractEvent args)
     {
         if (args.Target == null || !args.CanReach || !HasComp<MobStateComponent>(args.Target) || !_cell.HasDrawCharge(uid.Owner, user: args.User))
+        {
+            PlayErrorSound(uid);
             return;
+        }
 
         _audio.PlayPvs(uid.Comp.ScanningBeginSound, uid);
 
@@ -148,15 +158,34 @@ public sealed class HealthAnalyzerSystem : EntitySystem
 
     private void OnDoAfter(Entity<HealthAnalyzerComponent> uid, ref HealthAnalyzerDoAfterEvent args)
     {
-        if (args.Handled || args.Cancelled || args.Target == null || !_cell.HasDrawCharge(uid.Owner, user: args.User))
+        if (args.Handled)
             return;
+
+        if (args.Cancelled || args.Target == null || !_cell.HasDrawCharge(uid.Owner, user: args.User))
+        {
+            PlayErrorSound(uid);
+            return;
+        }
 
         if (!uid.Comp.Silent)
             _audio.PlayPvs(uid.Comp.ScanningEndSound, uid);
 
+        uid.Comp.ScannedBy = args.User;
         OpenUserInterface(args.User, uid);
         BeginAnalyzingEntity(uid, args.Target.Value);
         args.Handled = true;
+    }
+
+    /// <summary>
+    /// Plays the analyzer's rate-limited failure sound.
+    /// </summary>
+    public void PlayErrorSound(Entity<HealthAnalyzerComponent> analyzer)
+    {
+        if (_timing.CurTime < analyzer.Comp.NextErrorSound)
+            return;
+
+        analyzer.Comp.NextErrorSound = _timing.CurTime + analyzer.Comp.ErrorSoundDelay;
+        _audio.PlayPvs(analyzer.Comp.ErrorSound, analyzer);
     }
 
     /// <summary>
@@ -220,6 +249,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
     {
         //Unlink the analyzer
         healthAnalyzer.Comp.ScannedEntity = null;
+        healthAnalyzer.Comp.ScannedBy = null;
         healthAnalyzer.Comp.CurrentBodyPart = null; // Shitmed Change
         _toggle.TryDeactivate(healthAnalyzer.Owner);
 
@@ -310,6 +340,10 @@ public sealed class HealthAnalyzerSystem : EntitySystem
 
         // Goobstation start
         var bodyStatus = _woundSystem.GetDamageableStatesOnBody(target); // Goob
+        var openIncisions = FetchOpenIncisions(body);
+        var canUploadMedicalRecord = analyzerComp.ScannedBy is { } scannedBy &&
+                                     !Deleted(scannedBy) &&
+                                     _access.FindAccessTags(scannedBy).Contains(MedicalAccess);
         Dictionary<TargetBodyPart, bool> bleeding; // Goobstation - removed unnecessary allocation
 
         var vitalDamage = FixedPoint2.Zero;
@@ -330,6 +364,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bodyTemperature,
                     bloodAmount,
                     scanMode,
+                    canUploadMedicalRecord,
                     unrevivable,
                     bodyStatus,
                     bleeding,
@@ -337,6 +372,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     traumas,
                     pain,
                     bloodLow, // Goobstation
+                    openIncisions,
                     part != null ? GetNetEntity(part) : null
                 ));
                 break;
@@ -349,10 +385,12 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bodyTemperature,
                     bloodAmount,
                     scanMode,
+                    canUploadMedicalRecord,
                     bleeding,
                     vitalDamage, // Goobstation
                     bodyStatus,
-                    organs
+                    organs,
+                    openIncisions
                 ));
                 break;
 
@@ -364,13 +402,30 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     bodyTemperature,
                     bloodAmount,
                     scanMode,
+                    canUploadMedicalRecord,
                     bleeding,
                     vitalDamage, // Goobstation
                     bodyStatus,
-                    chemicals
+                    chemicals,
+                    openIncisions
                 ));
                 break;
         }
+    }
+
+    private HashSet<TargetBodyPart> FetchOpenIncisions(BodyComponent body)
+    {
+        var openIncisions = new HashSet<TargetBodyPart>();
+        if (body.RootContainer.ContainedEntity is not { } rootPart)
+            return openIncisions;
+
+        foreach (var (woundable, _) in _woundSystem.GetAllWoundableChildren(rootPart))
+        {
+            if (HasComp<IncisionOpenComponent>(woundable))
+                openIncisions.Add(_bodySystem.GetTargetBodyPart(woundable));
+        }
+
+        return openIncisions;
     }
 
     private void FetchBodyData(EntityUid target,

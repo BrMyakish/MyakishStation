@@ -25,6 +25,7 @@ namespace Content.Client.HealthAnalyzer.UI
             _window = this.CreateWindow<HealthAnalyzerWindow>();
             _window.OnBodyPartSelected += SendBodyPartMessage; // Shitmed Change
             _window.OnModeChanged += SendModeMessage;
+            _window.OnUploadToMedicalRecord += SendUploadMessage;
             _window.Title = EntMan.GetComponent<MetaDataComponent>(Owner).EntityName;
         }
 
@@ -52,6 +53,7 @@ namespace Content.Client.HealthAnalyzer.UI
         private void SendBodyPartMessage(TargetBodyPart? part, EntityUid target) => SendMessage(new HealthAnalyzerPartMessage(EntMan.GetNetEntity(target), part ?? null));
 
         private void SendModeMessage(HealthAnalyzerMode mode, EntityUid target) => SendMessage(new HealthAnalyzerModeSelectedMessage(EntMan.GetNetEntity(target), mode));
+        private void SendUploadMessage() => SendMessage(new HealthAnalyzerUploadToMedicalRecordMessage());
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
@@ -59,7 +61,11 @@ namespace Content.Client.HealthAnalyzer.UI
                 return;
 
             if (_window != null)
+            {
                 _window.OnBodyPartSelected -= SendBodyPartMessage;
+                _window.OnModeChanged -= SendModeMessage;
+                _window.OnUploadToMedicalRecord -= SendUploadMessage;
+            }
 
             _window?.Dispose();
         }

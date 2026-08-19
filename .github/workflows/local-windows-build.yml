@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Local Windows Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ master ]
+    types: [ opened, reopened, synchronize ]
+    paths:
+      - '.github/workflows/local-windows-build.yml'
+      - 'Content.Client/HealthAnalyzer/**'
+      - 'Content.Client/MedicalRecords/**'
+      - 'Content.Server/Medical/**'
+      - 'Content.Server/MedicalRecords/**'
+      - 'Content.Shared/MedicalRecords/**'
+      - 'Content.Shared/_Shitmed/Medical/HealthAnalyzer/**'
+      - 'Resources/Locale/en-US/medical/**'
+      - 'Resources/Locale/ru-RU/medical/**'
+      - 'Resources/Locale/en-US/_Shitmed/medical/components/health-analyzer.ftl'
+      - 'Resources/Locale/ru-RU/_Shitmed/medical/components/health-analyzer.ftl'
+      - 'Resources/Prototypes/Entities/Structures/Machines/Computers/computers.yml'
+
+concurrency:
+  group: local-windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package win-x64 local server
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          submodules: recursive
+
+      - name: Pull engine updates
+        uses: space-wizards/submodule-dependency@v0.1.5
+
+      - name: Update engine submodules
+        run: git -C RobustToolbox submodule update --init --recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4.1.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build packaging tool
+        run: dotnet build Content.Packaging --configuration Release --no-restore --nologo
+
+      - name: Copy packaging tool outside the repository
+        shell: pwsh
+        run: |
+          $toolPath = Join-Path $env:RUNNER_TEMP "Content.Packaging"
+          New-Item -ItemType Directory -Path $toolPath -Force | Out-Null
+          Copy-Item -Path "Content.Packaging/bin/Release/net10.0/*" -Destination $toolPath -Recurse -Force
+
+      - name: Package local server with client content
+        shell: pwsh
+        run: |
+          $packager = Join-Path $env:RUNNER_TEMP "Content.Packaging/Content.Packaging.dll"
+          dotnet $packager server --hybrid-acz --platform win-x64 --configuration Release
+
+      - name: Prepare downloadable build
+        shell: pwsh
+        run: Expand-Archive -Path release/SS14.Server_win-x64.zip -DestinationPath local-win-x64 -Force
+
+      - name: Smoke test packaged server
+        shell: pwsh
+        run: |
+          $server = Join-Path $PWD "local-win-x64/Robust.Server.exe"
+          if (-not (Test-Path $server)) {
+            throw "Packaged server executable was not found: $server"
+          }
+
+          $dataPath = Join-Path $env:RUNNER_TEMP "server-data"
+          $stdout = Join-Path $env:RUNNER_TEMP "server-stdout.log"
+          $stderr = Join-Path $env:RUNNER_TEMP "server-stderr.log"
+          New-Item -ItemType Directory -Path $dataPath -Force | Out-Null
+
+          $process = Start-Process `
+            -FilePath $server `
+            -WorkingDirectory (Split-Path $server) `
+            -ArgumentList @("--data-dir", $dataPath) `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
+
+          try {
+            $ready = $false
+            for ($second = 0; $second -lt 120; $second++) {
+              Start-Sleep -Seconds 1
+
+              if (Test-Path $stdout) {
+                $output = Get-Content $stdout -Raw -ErrorAction SilentlyContinue
+                if ($output -match "Server Version .* -> Ready") {
+                  $ready = $true
+                  break
+                }
+              }
+
+              if ($process.HasExited) {
+                break
+              }
+            }
+
+            if (Test-Path $stdout) {
+              Get-Content $stdout
+            }
+            if (Test-Path $stderr) {
+              Get-Content $stderr
+            }
+
+            if (-not $ready) {
+              if ($process.HasExited) {
+                throw "Packaged server exited before becoming ready (exit code $($process.ExitCode))."
+              }
+
+              throw "Packaged server did not become ready within 120 seconds."
+            }
+
+            Write-Host "Packaged server reached the ready state successfully."
+          }
+          finally {
+            if (-not $process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+            }
+          }
+
+      - name: Upload local build
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: MyakishStation-MedicalRecords-Test-win-x64
+          path: local-win-x64
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

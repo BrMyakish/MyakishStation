@@ -1,0 +1,109 @@
+<!--
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      Title="{Loc 'medical-records-console-title'}"
+                      MinSize="900 600">
+    <BoxContainer Orientation="Vertical" Margin="8">
+        <BoxContainer Margin="0 0 0 8">
+            <OptionButton Name="FilterType" MinWidth="175" Margin="0 0 6 0" />
+            <LineEdit Name="FilterText" HorizontalExpand="True"
+                      PlaceHolder="{Loc 'medical-records-console-filter-placeholder'}" />
+            <OptionButton Name="SpeciesFilter" HorizontalExpand="True" Visible="False" />
+            <Button Name="FilterButton" Text="{Loc 'medical-records-console-search'}" />
+            <Button Name="ResetFilterButton" Text="{Loc 'medical-records-console-reset'}" />
+        </BoxContainer>
+
+        <BoxContainer Margin="0 0 0 8">
+            <Label Text="{Loc 'medical-records-console-category-filter-label'}"
+                   VerticalAlignment="Center"
+                   Margin="0 0 6 0" />
+            <OptionButton Name="CategoryFilter" MinWidth="220" />
+        </BoxContainer>
+
+        <BoxContainer Orientation="Horizontal" VerticalExpand="True">
+            <BoxContainer Orientation="Vertical" MinWidth="240" MaxWidth="240" Margin="0 0 8 0">
+                <Label Text="{Loc 'medical-records-console-records'}" StyleClasses="LabelHeading" />
+                <ItemList Name="RecordListing" VerticalExpand="True" />
+                <Label Name="NoRecordsLabel" Text="{Loc 'medical-records-console-no-records'}" />
+            </BoxContainer>
+
+            <PanelContainer StyleClasses="LowDivider" />
+
+            <ScrollContainer VerticalExpand="True" HorizontalExpand="True" Margin="8 0 0 0">
+                <BoxContainer Orientation="Vertical" HorizontalExpand="True">
+                    <Label Name="NoSelectionLabel"
+                           Text="{Loc 'medical-records-console-select-record'}"
+                           StyleClasses="LabelHeading" />
+
+                    <BoxContainer Name="RecordContainer" Orientation="Vertical" Visible="False">
+                        <Label Name="PatientName" StyleClasses="LabelBig" />
+                        <Label Name="PatientJob" />
+                        <Label Name="PatientSpecies" />
+                        <Label Name="PatientAge" />
+
+                        <BoxContainer Margin="0 8 0 0">
+                            <Label Name="BodyStatusLabel" VerticalAlignment="Center" HorizontalExpand="True" />
+                            <Button Name="ToggleBodyDestroyedButton" />
+                        </BoxContainer>
+
+                        <Label Text="{Loc 'medical-records-console-negative-traits'}"
+                               StyleClasses="LabelHeading" Margin="0 10 0 2" />
+                        <RichTextLabel Name="NegativeTraits" />
+
+                        <Label Text="{Loc 'medical-records-console-doctor-notes'}"
+                               StyleClasses="LabelHeading" Margin="0 10 0 2" />
+                        <TextEdit Name="RecordNotes" MinHeight="85" HorizontalExpand="True" />
+                        <Button Name="SaveRecordNotesButton"
+                                Text="{Loc 'medical-records-console-save-notes'}"
+                                HorizontalAlignment="Right" />
+
+                        <Label Text="{Loc 'medical-records-console-examinations'}"
+                               StyleClasses="LabelHeading" Margin="0 10 0 2" />
+                        <ItemList Name="ExaminationList" MinHeight="120" />
+                        <Label Name="NoExaminationsLabel"
+                               Text="{Loc 'medical-records-console-no-examinations'}" />
+
+                        <BoxContainer Name="ExaminationContainer" Orientation="Vertical" Visible="False">
+                            <Label Name="ExaminationMeta" StyleClasses="LabelSubText" Margin="0 8 0 2" />
+                            <LineEdit Name="ExaminationTitle" />
+                            <Label Text="{Loc 'medical-records-console-examination-note'}"
+                                   StyleClasses="LabelHeading" Margin="0 8 0 2" />
+                            <TextEdit Name="ExaminationNote" MinHeight="70" />
+                            <BoxContainer HorizontalAlignment="Right">
+                                <Button Name="SaveExaminationButton"
+                                        Text="{Loc 'medical-records-console-save-examination'}" />
+                                <Button Name="DeleteExaminationButton"
+                                        Text="{Loc 'medical-records-console-delete-examination'}" />
+                            </BoxContainer>
+
+                            <Label Text="{Loc 'medical-records-console-report'}"
+                                   StyleClasses="LabelHeading" Margin="0 10 0 2" />
+                            <RichTextLabel Name="ExaminationReport" />
+                        </BoxContainer>
+                    </BoxContainer>
+                </BoxContainer>
+            </ScrollContainer>
+        </BoxContainer>
+
+        <PanelContainer StyleClasses="LowDivider" Margin="0 8 0 0" />
+        <BoxContainer Orientation="Horizontal"
+                      Margin="2 2 0 0"
+                      VerticalAlignment="Bottom">
+            <Label Text="{Loc 'medical-records-console-flavor-left'}"
+                   StyleClasses="WindowFooterText" />
+            <Label Text="{Loc 'medical-records-console-flavor-right'}"
+                   StyleClasses="WindowFooterText"
+                   HorizontalAlignment="Right"
+                   HorizontalExpand="True"
+                   Margin="0 0 5 0" />
+            <TextureRect StyleClasses="NTLogoDark"
+                         Stretch="KeepAspectCentered"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Right"
+                         SetSize="19 19" />
+        </BoxContainer>
+    </BoxContainer>
+</controls:FancyWindow>

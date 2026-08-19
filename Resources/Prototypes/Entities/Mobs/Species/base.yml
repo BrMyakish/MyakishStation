@@ -150,6 +150,7 @@
     requiredLegs: 2
   - type: Identity
   - type: IdExaminable
+  - type: MedicalNotes
   - type: Hands
   - type: ComplexInteraction
   - type: Internals
@@ -206,6 +207,8 @@
         type: StrippableBoundUserInterface
       enum.SetWantedVerbMenu.Key: # Goobstation-WantedMenu
         type: WantedMenuBoundUserInterface
+      enum.MedicalNotesUiKey.Key:
+        type: MedicalNotesBoundUserInterface
       # Goobstation - changelings
       enum.StoreUiKey.Key:
         type: StoreBoundUserInterface

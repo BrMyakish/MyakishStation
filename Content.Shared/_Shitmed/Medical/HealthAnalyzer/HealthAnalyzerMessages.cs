@@ -17,29 +17,35 @@ public abstract class HealthAnalyzerBaseMessage : BoundUserInterfaceMessage
     public readonly float Temperature;
     public readonly float BloodLevel;
     public readonly bool? ScanMode;
+    public readonly bool CanUploadMedicalRecord;
     public readonly HealthAnalyzerMode ActiveMode;
     public Dictionary<TargetBodyPart, WoundableSeverity>? Body;
     public Dictionary<TargetBodyPart, bool> Bleeding;
     public readonly FixedPoint2 VitalDamage; // Goobstation
+    public readonly HashSet<TargetBodyPart> OpenIncisions;
 
     public HealthAnalyzerBaseMessage(
         NetEntity? targetEntity,
         float temperature,
         float bloodLevel,
         bool? scanMode,
+        bool canUploadMedicalRecord,
         HealthAnalyzerMode activeMode,
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
         Dictionary<TargetBodyPart, bool> bleeding,
-        FixedPoint2 vitalDamage)  // Goobstation
+        FixedPoint2 vitalDamage,
+        HashSet<TargetBodyPart> openIncisions)  // Goobstation
     {
         TargetEntity = targetEntity;
         Temperature = temperature;
         BloodLevel = bloodLevel;
         ScanMode = scanMode;
+        CanUploadMedicalRecord = canUploadMedicalRecord;
         ActiveMode = activeMode;
         Body = body;
         Bleeding = bleeding;
         VitalDamage = vitalDamage;  // Goobstation
+        OpenIncisions = openIncisions;
     }
 }
 
@@ -58,6 +64,7 @@ public sealed class HealthAnalyzerBodyMessage : HealthAnalyzerBaseMessage
         float temperature,
         float bloodLevel,
         bool? scanMode,
+        bool canUploadMedicalRecord,
         bool? unrevivable,
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
         Dictionary<TargetBodyPart, bool> bleeding,
@@ -65,8 +72,10 @@ public sealed class HealthAnalyzerBodyMessage : HealthAnalyzerBaseMessage
         Dictionary<NetEntity, List<WoundableTraumaData>> traumas,
         Dictionary<NetEntity, FixedPoint2> nervePainFeels,
         bool bloodLevelLow, // Goobstation
+        HashSet<TargetBodyPart> openIncisions,
         NetEntity? selectedPart = null)
-        : base(targetEntity, temperature, bloodLevel, scanMode, HealthAnalyzerMode.Body, body, bleeding, vitalDamage)  // Goobstation
+        : base(targetEntity, temperature, bloodLevel, scanMode, canUploadMedicalRecord, HealthAnalyzerMode.Body, body, bleeding, vitalDamage,
+            openIncisions)  // Goobstation
     {
         Unrevivable = unrevivable;
         SelectedPart = selectedPart;
@@ -87,11 +96,14 @@ public sealed class HealthAnalyzerOrgansMessage : HealthAnalyzerBaseMessage
         float temperature,
         float bloodLevel,
         bool? scanMode,
+        bool canUploadMedicalRecord,
         Dictionary<TargetBodyPart, bool> bleeding,
         FixedPoint2 vitalDamage, // Goobstation
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
-        Dictionary<NetEntity, OrganTraumaData> organs)
-        : base(targetEntity, temperature, bloodLevel, scanMode, HealthAnalyzerMode.Organs, body, bleeding, vitalDamage) // Goobstation
+        Dictionary<NetEntity, OrganTraumaData> organs,
+        HashSet<TargetBodyPart> openIncisions)
+        : base(targetEntity, temperature, bloodLevel, scanMode, canUploadMedicalRecord, HealthAnalyzerMode.Organs, body, bleeding, vitalDamage,
+            openIncisions) // Goobstation
     {
         Organs = organs;
     }
@@ -108,11 +120,14 @@ public sealed class HealthAnalyzerChemicalsMessage : HealthAnalyzerBaseMessage
         float temperature,
         float bloodLevel,
         bool? scanMode,
+        bool canUploadMedicalRecord,
         Dictionary<TargetBodyPart, bool> bleeding,
         FixedPoint2 vitalDamage, // Goobstation
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
-        Dictionary<NetEntity, Solution> solutions)
-        : base(targetEntity, temperature, bloodLevel, scanMode, HealthAnalyzerMode.Chemicals, body, bleeding, vitalDamage) // Goobstation
+        Dictionary<NetEntity, Solution> solutions,
+        HashSet<TargetBodyPart> openIncisions)
+        : base(targetEntity, temperature, bloodLevel, scanMode, canUploadMedicalRecord, HealthAnalyzerMode.Chemicals, body, bleeding, vitalDamage,
+            openIncisions) // Goobstation
     {
         Solutions = solutions;
     }
@@ -131,6 +146,9 @@ public sealed class HealthAnalyzerModeSelectedMessage : BoundUserInterfaceMessag
         Mode = mode;
     }
 }
+
+[Serializable, NetSerializable]
+public sealed class HealthAnalyzerUploadToMedicalRecordMessage : BoundUserInterfaceMessage;
 
 // Part selection message (from client to server)
 [Serializable, NetSerializable]
