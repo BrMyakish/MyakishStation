@@ -150,6 +150,7 @@
     requiredLegs: 2
   - type: Identity
   - type: IdExaminable
+  - type: MedicalNotes
   - type: Hands
   - type: ComplexInteraction
   - type: Internals

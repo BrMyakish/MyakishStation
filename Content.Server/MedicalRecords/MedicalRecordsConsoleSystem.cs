@@ -7,7 +7,6 @@ using Content.Server.Radio.EntitySystems;
 using Content.Server.Station.Systems;
 using Content.Server.StationRecords.Components;
 using Content.Server.StationRecords.Systems;
-using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.IdentityManagement;
 using Content.Shared.MedicalRecords;
@@ -48,7 +47,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             subs.Event<MedicalRecordDeleteExaminationMessage>(OnDeleteExamination);
         });
 
-        Subs.BuiEvents<IdExaminableComponent>(MedicalNotesUiKey.Key, subs =>
+        Subs.BuiEvents<MedicalNotesComponent>(MedicalNotesUiKey.Key, subs =>
         {
             subs.Event<BoundUIOpenedEvent>(OnRemoteUiOpened);
             subs.Event<MedicalNotesSetMessage>(OnRemoteSetNotes);
@@ -65,7 +64,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         UpdateUi(ent);
     }
 
-    private void OnRemoteUiOpened(Entity<IdExaminableComponent> ent, ref BoundUIOpenedEvent args)
+    private void OnRemoteUiOpened(Entity<MedicalNotesComponent> ent, ref BoundUIOpenedEvent args)
     {
         if (!CanUseRemoteNotes(ent, args.Actor))
             return;
@@ -141,7 +140,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         }
     }
 
-    private void OnRemoteSetNotes(Entity<IdExaminableComponent> ent, ref MedicalNotesSetMessage msg)
+    private void OnRemoteSetNotes(Entity<MedicalNotesComponent> ent, ref MedicalNotesSetMessage msg)
     {
         if (!CanUseRemoteNotes(ent, msg.Actor) ||
             !TryGetTargetRecord(ent, out var key, out _, out _))
@@ -160,7 +159,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         }
     }
 
-    private bool CanUseRemoteNotes(Entity<IdExaminableComponent> target, EntityUid user)
+    private bool CanUseRemoteNotes(Entity<MedicalNotesComponent> target, EntityUid user)
     {
         if (_idExaminable.CanAccessMedicalNotes(user))
             return true;
@@ -229,7 +228,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         _ui.SetUiState(ent.Owner, MedicalRecordsConsoleKey.Key, state);
     }
 
-    private void UpdateRemoteUi(Entity<IdExaminableComponent> ent)
+    private void UpdateRemoteUi(Entity<MedicalNotesComponent> ent)
     {
         if (!TryGetTargetRecord(ent, out _, out var generalRecord, out var medicalRecord))
         {
