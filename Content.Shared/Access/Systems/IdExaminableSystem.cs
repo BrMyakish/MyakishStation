@@ -6,7 +6,6 @@ using Content.Shared.Examine;
 using Content.Shared.Hands.Components;
 using Content.Shared.Inventory;
 using Content.Shared.MedicalRecords;
-using Content.Shared.Overlays;
 using Content.Shared.PDA;
 using Content.Shared.Verbs;
 using Robust.Shared.Network;
@@ -138,20 +137,11 @@ public sealed class IdExaminableSystem : EntitySystem
     }
 
     /// <summary>
-    /// Medical notes can be accessed with an equipped medical HUD or a PDA in the ID slot
-    /// whose inserted ID has Medical access.
+    /// Medical notes can only be accessed by a user whose carried ID or PDA grants Medical access.
     /// </summary>
     public bool CanAccessMedicalNotes(EntityUid user)
     {
-        if (_inventorySystem.TryGetSlotEntity(user, "eyes", out var eyes) &&
-            HasComp<ShowHealthIconsComponent>(eyes))
-        {
-            return true;
-        }
-
-        return _inventorySystem.TryGetSlotEntity(user, "id", out var idSlot) &&
-               HasComp<PdaComponent>(idSlot) &&
-               _accessReader.FindAccessTags(idSlot.Value).Contains(MedicalAccess);
+        return _accessReader.FindAccessTags(user).Contains(MedicalAccess);
     }
 
     private void OpenMedicalNotesUI(EntityUid user, EntityUid target)

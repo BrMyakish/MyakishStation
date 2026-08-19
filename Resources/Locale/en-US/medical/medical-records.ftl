@@ -25,7 +25,7 @@ medical-records-console-examination-meta = { $time } · { $examiner } ({ $job })
 medical-records-permission-denied = Medical access is required to edit medical records.
 medical-notes-verb-name = Medical notes
 medical-notes-window-title = Doctor's notes
-medical-notes-access-denied = A medical HUD or a PDA with Medical access is required.
+medical-notes-access-denied = Medical access is required.
 medical-records-radio-notes-updated = { $editor } ({ $editorJob }) updated the doctor's notes for { $patient } ({ $patientJob }).
 medical-records-radio-examination-deleted = { $editor } ({ $editorJob }) deleted examination “{ $title }” from the medical record of { $patient } ({ $patientJob }).
 

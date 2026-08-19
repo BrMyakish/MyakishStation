@@ -25,7 +25,7 @@ medical-records-console-examination-meta = { $time } · { $examiner } ({ $job })
 medical-records-permission-denied = Для изменения медицинских карт требуется медицинский доступ.
 medical-notes-verb-name = Медицинские заметки
 medical-notes-window-title = Заметки врача
-medical-notes-access-denied = Требуется медицинский HUD или КПК с медицинским доступом.
+medical-notes-access-denied = Требуется медицинский доступ.
 medical-records-radio-notes-updated = { $editor } ({ $editorJob }) обновил(а) заметки врача для { $patient } ({ $patientJob }).
 medical-records-radio-examination-deleted = { $editor } ({ $editorJob }) удалил(а) обследование «{ $title }» из медицинской карты { $patient } ({ $patientJob }).
 
