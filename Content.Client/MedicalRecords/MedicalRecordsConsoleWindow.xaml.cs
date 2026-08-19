@@ -20,7 +20,9 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
 {
     public Action<uint?>? OnKeySelected;
     public Action<StationRecordFilterType, string>? OnFiltersChanged;
+    public Action<MedicalRecordCategoryFilter>? OnCategoryFilterChanged;
     public Action<string>? OnRecordNotesSaved;
+    public Action<bool>? OnBodyDestroyedChanged;
     public Action<uint, string, string>? OnExaminationSaved;
     public Action<uint>? OnExaminationDeleted;
 
@@ -34,7 +36,10 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
     private bool _populating;
     private bool _canEdit;
     private uint? _selectedExamination;
+    private readonly List<string> _speciesFilters = new();
+    private int _selectedSpeciesFilter;
     private StationRecordFilterType _currentFilter = StationRecordFilterType.Name;
+    private MedicalRecordCategoryFilter _currentCategoryFilter = MedicalRecordCategoryFilter.All;
     private MedicalRecord? _currentRecord;
 
     public MedicalRecordsConsoleWindow(
@@ -57,17 +62,55 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
         foreach (var type in Enum.GetValues<StationRecordFilterType>().Where(IsSupportedFilter))
             FilterType.AddItem(Loc.GetString($"general-station-record-{type.ToString().ToLower()}-filter"), (int) type);
 
+        _speciesFilters.Add(string.Empty);
+        SpeciesFilter.AddItem(Loc.GetString("medical-records-console-species-filter-all"), 0);
+        foreach (var species in _prototypes.EnumeratePrototypes<SpeciesPrototype>()
+                     .OrderBy(species => Loc.GetString(species.Name)))
+        {
+            var id = _speciesFilters.Count;
+            _speciesFilters.Add(species.ID);
+            SpeciesFilter.AddItem(Loc.GetString(species.Name), id);
+        }
+        SpeciesFilter.SelectId(0);
+
+        foreach (var filter in Enum.GetValues<MedicalRecordCategoryFilter>())
+            CategoryFilter.AddItem(Loc.GetString(GetCategoryFilterLocKey(filter)), (int) filter);
+        CategoryFilter.SelectId((int) _currentCategoryFilter);
+
         FilterType.OnItemSelected += args =>
         {
             _currentFilter = (StationRecordFilterType) args.Id;
+            UpdateFilterControls();
+            SendFilter();
+        };
+        SpeciesFilter.OnItemSelected += args =>
+        {
+            SpeciesFilter.SelectId(args.Id);
+            _selectedSpeciesFilter = args.Id;
             SendFilter();
         };
         FilterText.OnTextEntered += _ => SendFilter();
         FilterButton.OnPressed += _ => SendFilter();
         ResetFilterButton.OnPressed += _ =>
         {
-            FilterText.Text = string.Empty;
+            if (_currentFilter == StationRecordFilterType.Species)
+            {
+                _selectedSpeciesFilter = 0;
+                SpeciesFilter.SelectId(0);
+            }
+            else
+            {
+                FilterText.Text = string.Empty;
+            }
+
             SendFilter();
+        };
+        CategoryFilter.OnItemSelected += args =>
+        {
+            CategoryFilter.SelectId(args.Id);
+            _currentCategoryFilter = (MedicalRecordCategoryFilter) args.Id;
+            if (!_populating)
+                OnCategoryFilterChanged?.Invoke(_currentCategoryFilter);
         };
 
         RecordListing.OnItemSelected += args =>
@@ -99,6 +142,12 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
                 OnRecordNotesSaved?.Invoke(notes);
         };
 
+        ToggleBodyDestroyedButton.OnPressed += _ =>
+        {
+            if (_canEdit && _currentRecord != null)
+                OnBodyDestroyedChanged?.Invoke(!_currentRecord.BodyDestroyed);
+        };
+
         SaveExaminationButton.OnPressed += _ =>
         {
             if (!_canEdit || _selectedExamination == null)
@@ -126,9 +175,22 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
         if (state.Filter != null && IsSupportedFilter(state.Filter.Type))
         {
             _currentFilter = state.Filter.Type;
-            FilterText.Text = state.Filter.Value;
+            if (_currentFilter == StationRecordFilterType.Species)
+            {
+                var speciesIndex = _speciesFilters.IndexOf(state.Filter.Value);
+                _selectedSpeciesFilter = Math.Max(speciesIndex, 0);
+                SpeciesFilter.SelectId(_selectedSpeciesFilter);
+            }
+            else
+            {
+                FilterText.Text = state.Filter.Value;
+            }
         }
         FilterType.SelectId((int) _currentFilter);
+        UpdateFilterControls();
+
+        _currentCategoryFilter = state.CategoryFilter;
+        CategoryFilter.SelectId((int) _currentCategoryFilter);
 
         RecordListing.Clear();
         RecordListing.ClearSelected();
@@ -168,6 +230,13 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
 
         PatientSpecies.Text = Loc.GetString("medical-records-console-species", ("species", species));
         PatientAge.Text = Loc.GetString("medical-records-console-age", ("age", profile.Age));
+        BodyStatusLabel.Text = Loc.GetString(record.BodyDestroyed
+            ? "medical-records-console-body-status-destroyed"
+            : "medical-records-console-body-status-present");
+        ToggleBodyDestroyedButton.Text = Loc.GetString(record.BodyDestroyed
+            ? "medical-records-console-body-destroyed-clear"
+            : "medical-records-console-body-destroyed-set");
+        ToggleBodyDestroyedButton.Disabled = !_canEdit;
 
         var traits = new List<string>();
         foreach (var traitId in record.NegativeTraits)
@@ -236,13 +305,40 @@ public sealed partial class MedicalRecordsConsoleWindow : FancyWindow
     private void SendFilter()
     {
         if (!_populating)
-            OnFiltersChanged?.Invoke(_currentFilter, FilterText.Text);
+            OnFiltersChanged?.Invoke(_currentFilter, GetFilterValue());
+    }
+
+    private string GetFilterValue()
+    {
+        if (_currentFilter != StationRecordFilterType.Species)
+            return FilterText.Text;
+
+        return _selectedSpeciesFilter >= 0 && _selectedSpeciesFilter < _speciesFilters.Count
+            ? _speciesFilters[_selectedSpeciesFilter]
+            : string.Empty;
+    }
+
+    private void UpdateFilterControls()
+    {
+        var speciesFilter = _currentFilter == StationRecordFilterType.Species;
+        FilterText.Visible = !speciesFilter;
+        SpeciesFilter.Visible = speciesFilter;
+    }
+
+    private static string GetCategoryFilterLocKey(MedicalRecordCategoryFilter filter)
+    {
+        return filter switch
+        {
+            MedicalRecordCategoryFilter.NoExaminations => "medical-records-console-category-filter-no-examinations",
+            MedicalRecordCategoryFilter.HasExaminations => "medical-records-console-category-filter-has-examinations",
+            MedicalRecordCategoryFilter.BodyDestroyed => "medical-records-console-category-filter-body-destroyed",
+            _ => "medical-records-console-category-filter-all",
+        };
     }
 
     private static bool IsSupportedFilter(StationRecordFilterType type)
     {
         return type is not StationRecordFilterType.DNA
-            and not StationRecordFilterType.Species
             and not StationRecordFilterType.Prints;
     }
 }

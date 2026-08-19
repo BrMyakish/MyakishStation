@@ -17,6 +17,15 @@ public enum MedicalNotesUiKey : byte
     Key,
 }
 
+[Serializable, NetSerializable]
+public enum MedicalRecordCategoryFilter : byte
+{
+    All,
+    NoExaminations,
+    HasExaminations,
+    BodyDestroyed,
+}
+
 /// <summary>
 /// Only the public demographic subset needed by the medical console is sent to viewers.
 /// </summary>
@@ -31,6 +40,7 @@ public sealed class MedicalRecordsConsoleState : BoundUserInterfaceState
     public readonly MedicalRecord? MedicalRecord;
     public readonly Dictionary<uint, string>? RecordListing;
     public readonly StationRecordsFilter? Filter;
+    public readonly MedicalRecordCategoryFilter CategoryFilter;
     public readonly bool CanEdit;
 
     public MedicalRecordsConsoleState(
@@ -39,6 +49,7 @@ public sealed class MedicalRecordsConsoleState : BoundUserInterfaceState
         MedicalRecord? medicalRecord = null,
         Dictionary<uint, string>? recordListing = null,
         StationRecordsFilter? filter = null,
+        MedicalRecordCategoryFilter categoryFilter = MedicalRecordCategoryFilter.All,
         bool canEdit = false)
     {
         SelectedKey = selectedKey;
@@ -46,8 +57,21 @@ public sealed class MedicalRecordsConsoleState : BoundUserInterfaceState
         MedicalRecord = medicalRecord;
         RecordListing = recordListing;
         Filter = filter;
+        CategoryFilter = categoryFilter;
         CanEdit = canEdit;
     }
+}
+
+[Serializable, NetSerializable]
+public sealed class MedicalRecordSetCategoryFilterMessage(MedicalRecordCategoryFilter filter) : BoundUserInterfaceMessage
+{
+    public readonly MedicalRecordCategoryFilter Filter = filter;
+}
+
+[Serializable, NetSerializable]
+public sealed class MedicalRecordSetBodyDestroyedMessage(bool bodyDestroyed) : BoundUserInterfaceMessage
+{
+    public readonly bool BodyDestroyed = bodyDestroyed;
 }
 
 [Serializable, NetSerializable]

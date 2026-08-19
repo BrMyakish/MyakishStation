@@ -23,6 +23,13 @@ public sealed partial record MedicalRecord
     public string Notes = string.Empty;
 
     /// <summary>
+    /// Manually set when the patient's former body has been irreversibly destroyed.
+    /// This is independent from the mob's current health state.
+    /// </summary>
+    [DataField]
+    public bool BodyDestroyed;
+
+    /// <summary>
     /// Health analyzer reports saved during the round.
     /// </summary>
     [DataField]

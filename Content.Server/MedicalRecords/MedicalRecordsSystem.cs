@@ -82,6 +82,19 @@ public sealed class MedicalRecordsSystem : EntitySystem
         return true;
     }
 
+    public bool TrySetBodyDestroyed(StationRecordKey key, bool bodyDestroyed)
+    {
+        if (!_records.TryGetRecord<MedicalRecord>(key, out var record) ||
+            record.BodyDestroyed == bodyDestroyed)
+        {
+            return false;
+        }
+
+        record.BodyDestroyed = bodyDestroyed;
+        _records.Synchronize(key);
+        return true;
+    }
+
     public bool TryUpdateExamination(StationRecordKey key, uint id, string title, string note)
     {
         if (!_records.TryGetRecord<MedicalRecord>(key, out var record))

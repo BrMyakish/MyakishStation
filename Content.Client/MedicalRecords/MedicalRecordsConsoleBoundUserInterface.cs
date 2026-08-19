@@ -36,7 +36,10 @@ public sealed class MedicalRecordsConsoleBoundUserInterface : BoundUserInterface
 
         _window.OnKeySelected += key => SendMessage(new SelectStationRecord(key));
         _window.OnFiltersChanged += (type, value) => SendMessage(new SetStationRecordFilter(type, value));
+        _window.OnCategoryFilterChanged += filter => SendMessage(new MedicalRecordSetCategoryFilterMessage(filter));
         _window.OnRecordNotesSaved += notes => SendMessage(new MedicalRecordSetNotesMessage(notes));
+        _window.OnBodyDestroyedChanged += bodyDestroyed =>
+            SendMessage(new MedicalRecordSetBodyDestroyedMessage(bodyDestroyed));
         _window.OnExaminationSaved += (id, title, note) =>
             SendMessage(new MedicalRecordUpdateExaminationMessage(id, title, note));
         _window.OnExaminationDeleted += id => SendMessage(new MedicalRecordDeleteExaminationMessage(id));

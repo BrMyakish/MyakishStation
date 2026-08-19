@@ -19,6 +19,9 @@ public sealed partial class MedicalRecordsConsoleComponent : Component
     public StationRecordsFilter? Filter;
 
     [DataField]
+    public MedicalRecordCategoryFilter CategoryFilter;
+
+    [DataField]
     public uint MaxTitleLength = 96;
 
     [DataField]

@@ -11,8 +11,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <OptionButton Name="FilterType" MinWidth="175" Margin="0 0 6 0" />
             <LineEdit Name="FilterText" HorizontalExpand="True"
                       PlaceHolder="{Loc 'medical-records-console-filter-placeholder'}" />
+            <OptionButton Name="SpeciesFilter" HorizontalExpand="True" Visible="False" />
             <Button Name="FilterButton" Text="{Loc 'medical-records-console-search'}" />
             <Button Name="ResetFilterButton" Text="{Loc 'medical-records-console-reset'}" />
+        </BoxContainer>
+
+        <BoxContainer Margin="0 0 0 8">
+            <Label Text="{Loc 'medical-records-console-category-filter-label'}"
+                   VerticalAlignment="Center"
+                   Margin="0 0 6 0" />
+            <OptionButton Name="CategoryFilter" MinWidth="220" />
         </BoxContainer>
 
         <BoxContainer Orientation="Horizontal" VerticalExpand="True">
@@ -35,6 +43,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         <Label Name="PatientJob" />
                         <Label Name="PatientSpecies" />
                         <Label Name="PatientAge" />
+
+                        <BoxContainer Margin="0 8 0 0">
+                            <Label Name="BodyStatusLabel" VerticalAlignment="Center" HorizontalExpand="True" />
+                            <Button Name="ToggleBodyDestroyedButton" />
+                        </BoxContainer>
 
                         <Label Text="{Loc 'medical-records-console-negative-traits'}"
                                StyleClasses="LabelHeading" Margin="0 10 0 2" />

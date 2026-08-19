@@ -42,7 +42,9 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             subs.Event<BoundUIOpenedEvent>(OnUiOpened);
             subs.Event<SelectStationRecord>(OnKeySelected);
             subs.Event<SetStationRecordFilter>(OnFilterChanged);
+            subs.Event<MedicalRecordSetCategoryFilterMessage>(OnCategoryFilterChanged);
             subs.Event<MedicalRecordSetNotesMessage>(OnSetNotes);
+            subs.Event<MedicalRecordSetBodyDestroyedMessage>(OnSetBodyDestroyed);
             subs.Event<MedicalRecordUpdateExaminationMessage>(OnUpdateExamination);
             subs.Event<MedicalRecordDeleteExaminationMessage>(OnDeleteExamination);
         });
@@ -80,13 +82,24 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
 
     private void OnFilterChanged(Entity<MedicalRecordsConsoleComponent> ent, ref SetStationRecordFilter msg)
     {
-        if (msg.Type is StationRecordFilterType.DNA or StationRecordFilterType.Species or StationRecordFilterType.Prints)
+        if (msg.Type is StationRecordFilterType.DNA or StationRecordFilterType.Prints)
             return;
 
         if (ent.Comp.Filter?.Type == msg.Type && ent.Comp.Filter.Value == msg.Value)
             return;
 
         ent.Comp.Filter = new StationRecordsFilter(msg.Type, msg.Value);
+        UpdateUi(ent);
+    }
+
+    private void OnCategoryFilterChanged(
+        Entity<MedicalRecordsConsoleComponent> ent,
+        ref MedicalRecordSetCategoryFilterMessage msg)
+    {
+        if (!Enum.IsDefined(msg.Filter) || ent.Comp.CategoryFilter == msg.Filter)
+            return;
+
+        ent.Comp.CategoryFilter = msg.Filter;
         UpdateUi(ent);
     }
 
@@ -100,10 +113,21 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             return;
 
         if (_medicalRecords.TrySetNotes(key, notes))
-        {
             UpdateUi(ent);
-            NotifyNotesUpdated(key, msg.Actor, ent);
+    }
+
+    private void OnSetBodyDestroyed(
+        Entity<MedicalRecordsConsoleComponent> ent,
+        ref MedicalRecordSetBodyDestroyedMessage msg)
+    {
+        if (!TryGetEditableKey(ent, msg.Actor, out var key) ||
+            !_medicalRecords.TrySetBodyDestroyed(key, msg.BodyDestroyed))
+        {
+            return;
         }
+
+        UpdateUi(ent);
+        NotifyBodyDestroyedChanged(key, msg.Actor, msg.BodyDestroyed, ent);
     }
 
     private void OnUpdateExamination(Entity<MedicalRecordsConsoleComponent> ent, ref MedicalRecordUpdateExaminationMessage msg)
@@ -153,10 +177,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             return;
 
         if (_medicalRecords.TrySetNotes(key, notes))
-        {
             UpdateRemoteUi(ent);
-            NotifyNotesUpdated(key, msg.Actor);
-        }
     }
 
     private bool CanUseRemoteNotes(Entity<MedicalNotesComponent> target, EntityUid user)
@@ -203,6 +224,7 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         }
 
         var listing = _records.BuildListing((station.Value, stationRecords), ent.Comp.Filter);
+        FilterByMedicalCategory(listing, station.Value, stationRecords, ent.Comp.CategoryFilter);
         if (ent.Comp.ActiveKey is { } active && !listing.ContainsKey(active))
             ent.Comp.ActiveKey = null;
 
@@ -223,7 +245,8 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             profile,
             medicalRecord,
             listing,
-            ent.Comp.Filter);
+            ent.Comp.Filter,
+            ent.Comp.CategoryFilter);
 
         _ui.SetUiState(ent.Owner, MedicalRecordsConsoleKey.Key, state);
     }
@@ -271,27 +294,56 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         return true;
     }
 
-    private void NotifyNotesUpdated(
+    private void FilterByMedicalCategory(
+        Dictionary<uint, string> listing,
+        EntityUid station,
+        StationRecordsComponent stationRecords,
+        MedicalRecordCategoryFilter filter)
+    {
+        if (filter == MedicalRecordCategoryFilter.All)
+            return;
+
+        foreach (var id in listing.Keys.ToArray())
+        {
+            var key = new StationRecordKey(id, station);
+            if (!_records.TryGetRecord<MedicalRecord>(key, out var record, stationRecords) ||
+                !MatchesMedicalCategory(record, filter))
+            {
+                listing.Remove(id);
+            }
+        }
+    }
+
+    private static bool MatchesMedicalCategory(MedicalRecord record, MedicalRecordCategoryFilter filter)
+    {
+        return filter switch
+        {
+            MedicalRecordCategoryFilter.NoExaminations => !record.BodyDestroyed && record.Examinations.Count == 0,
+            MedicalRecordCategoryFilter.HasExaminations => !record.BodyDestroyed && record.Examinations.Count > 0,
+            MedicalRecordCategoryFilter.BodyDestroyed => record.BodyDestroyed,
+            _ => true,
+        };
+    }
+
+    private void NotifyBodyDestroyedChanged(
         StationRecordKey key,
         EntityUid editor,
+        bool bodyDestroyed,
         Entity<MedicalRecordsConsoleComponent> console)
     {
         if (!_records.TryGetRecord<GeneralStationRecord>(key, out var patient))
             return;
 
         GetMedicalWorker(editor, out var editorName, out var editorJob);
-        var message = Loc.GetString("medical-records-radio-notes-updated",
+        var message = Loc.GetString(
+            bodyDestroyed
+                ? "medical-records-radio-body-destroyed"
+                : "medical-records-radio-body-destroyed-cleared",
             ("editor", editorName),
             ("editorJob", editorJob),
             ("patient", patient.Name),
             ("patientJob", patient.JobTitle));
         _radio.SendRadioMessage(console.Owner, message, console.Comp.MedicalChannel, console.Owner);
-    }
-
-    private void NotifyNotesUpdated(StationRecordKey key, EntityUid editor)
-    {
-        if (TryFindMedicalRecordsConsole(key.OriginStation, out var console))
-            NotifyNotesUpdated(key, editor, console);
     }
 
     private void NotifyExaminationDeleted(
@@ -327,21 +379,4 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             job = jobTitle;
     }
 
-    private bool TryFindMedicalRecordsConsole(
-        EntityUid station,
-        out Entity<MedicalRecordsConsoleComponent> console)
-    {
-        var query = EntityQueryEnumerator<MedicalRecordsConsoleComponent>();
-        while (query.MoveNext(out var uid, out var component))
-        {
-            if (_station.GetOwningStation(uid) != station)
-                continue;
-
-            console = (uid, component);
-            return true;
-        }
-
-        console = default;
-        return false;
-    }
 }
