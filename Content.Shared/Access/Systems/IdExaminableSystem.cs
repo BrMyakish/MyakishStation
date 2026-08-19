@@ -6,6 +6,7 @@ using Content.Shared.Examine;
 using Content.Shared.Hands.Components;
 using Content.Shared.Inventory;
 using Content.Shared.MedicalRecords;
+using Content.Shared.Overlays;
 using Content.Shared.PDA;
 using Content.Shared.Verbs;
 using Robust.Shared.Network;
