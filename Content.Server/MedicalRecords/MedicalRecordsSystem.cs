@@ -74,6 +74,9 @@ public sealed class MedicalRecordsSystem : EntitySystem
         if (!_records.TryGetRecord<MedicalRecord>(key, out var record))
             return false;
 
+        if (record.Notes == notes)
+            return false;
+
         record.Notes = notes;
         _records.Synchronize(key);
         return true;

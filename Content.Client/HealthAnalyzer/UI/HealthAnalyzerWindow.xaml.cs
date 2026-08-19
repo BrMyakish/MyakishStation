@@ -432,14 +432,6 @@ namespace Content.Client.HealthAnalyzer.UI
                 });
             }
 
-            if (msg.WeldingEyeDamage > 0)
-            {
-                ConditionsListContainer.AddChild(new RichTextLabel
-                {
-                    Text = Loc.GetString("health-analyzer-condition-welding-blindness"),
-                    Margin = new Thickness(0, 4),
-                });
-            }
         }
 
         private bool TryGetEntityName(NetEntity ent, out string name)

@@ -206,6 +206,8 @@
         type: StrippableBoundUserInterface
       enum.SetWantedVerbMenu.Key: # Goobstation-WantedMenu
         type: WantedMenuBoundUserInterface
+      enum.MedicalNotesUiKey.Key:
+        type: MedicalNotesBoundUserInterface
       # Goobstation - changelings
       enum.StoreUiKey.Key:
         type: StoreBoundUserInterface

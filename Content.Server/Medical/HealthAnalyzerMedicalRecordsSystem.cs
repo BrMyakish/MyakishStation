@@ -25,7 +25,6 @@ using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Chemistry.Reagent;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
-using Content.Shared.Eye.Blinding.Components;
 using Content.Shared.GameTicking;
 using Content.Shared.IdentityManagement;
 using Content.Shared.MedicalScanner;
@@ -270,12 +269,6 @@ public sealed class HealthAnalyzerMedicalRecordsSystem : EntitySystem
             }
         }
 
-        if (TryComp<BlindableComponent>(target, out var blindable))
-        {
-            var weldingDamage = Math.Max(0, blindable.EyeDamage - blindable.MinDamage);
-            if (weldingDamage > 0)
-                report.AppendLine(Loc.GetString("health-analyzer-condition-welding-blindness"));
-        }
     }
 
     private void AppendDamage(StringBuilder report, EntityUid target)

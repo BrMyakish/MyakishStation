@@ -23,8 +23,6 @@ public abstract class HealthAnalyzerBaseMessage : BoundUserInterfaceMessage
     public Dictionary<TargetBodyPart, bool> Bleeding;
     public readonly FixedPoint2 VitalDamage; // Goobstation
     public readonly HashSet<TargetBodyPart> OpenIncisions;
-    public readonly int WeldingEyeDamage;
-    public readonly int WeldingEyeDamageMax;
 
     public HealthAnalyzerBaseMessage(
         NetEntity? targetEntity,
@@ -36,9 +34,7 @@ public abstract class HealthAnalyzerBaseMessage : BoundUserInterfaceMessage
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
         Dictionary<TargetBodyPart, bool> bleeding,
         FixedPoint2 vitalDamage,
-        HashSet<TargetBodyPart> openIncisions,
-        int weldingEyeDamage,
-        int weldingEyeDamageMax)  // Goobstation
+        HashSet<TargetBodyPart> openIncisions)  // Goobstation
     {
         TargetEntity = targetEntity;
         Temperature = temperature;
@@ -50,8 +46,6 @@ public abstract class HealthAnalyzerBaseMessage : BoundUserInterfaceMessage
         Bleeding = bleeding;
         VitalDamage = vitalDamage;  // Goobstation
         OpenIncisions = openIncisions;
-        WeldingEyeDamage = weldingEyeDamage;
-        WeldingEyeDamageMax = weldingEyeDamageMax;
     }
 }
 
@@ -79,11 +73,9 @@ public sealed class HealthAnalyzerBodyMessage : HealthAnalyzerBaseMessage
         Dictionary<NetEntity, FixedPoint2> nervePainFeels,
         bool bloodLevelLow, // Goobstation
         HashSet<TargetBodyPart> openIncisions,
-        int weldingEyeDamage,
-        int weldingEyeDamageMax,
         NetEntity? selectedPart = null)
         : base(targetEntity, temperature, bloodLevel, scanMode, canUploadMedicalRecord, HealthAnalyzerMode.Body, body, bleeding, vitalDamage,
-            openIncisions, weldingEyeDamage, weldingEyeDamageMax)  // Goobstation
+            openIncisions)  // Goobstation
     {
         Unrevivable = unrevivable;
         SelectedPart = selectedPart;
@@ -109,11 +101,9 @@ public sealed class HealthAnalyzerOrgansMessage : HealthAnalyzerBaseMessage
         FixedPoint2 vitalDamage, // Goobstation
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
         Dictionary<NetEntity, OrganTraumaData> organs,
-        HashSet<TargetBodyPart> openIncisions,
-        int weldingEyeDamage,
-        int weldingEyeDamageMax)
+        HashSet<TargetBodyPart> openIncisions)
         : base(targetEntity, temperature, bloodLevel, scanMode, canUploadMedicalRecord, HealthAnalyzerMode.Organs, body, bleeding, vitalDamage,
-            openIncisions, weldingEyeDamage, weldingEyeDamageMax) // Goobstation
+            openIncisions) // Goobstation
     {
         Organs = organs;
     }
@@ -135,11 +125,9 @@ public sealed class HealthAnalyzerChemicalsMessage : HealthAnalyzerBaseMessage
         FixedPoint2 vitalDamage, // Goobstation
         Dictionary<TargetBodyPart, WoundableSeverity>? body,
         Dictionary<NetEntity, Solution> solutions,
-        HashSet<TargetBodyPart> openIncisions,
-        int weldingEyeDamage,
-        int weldingEyeDamageMax)
+        HashSet<TargetBodyPart> openIncisions)
         : base(targetEntity, temperature, bloodLevel, scanMode, canUploadMedicalRecord, HealthAnalyzerMode.Chemicals, body, bleeding, vitalDamage,
-            openIncisions, weldingEyeDamage, weldingEyeDamageMax) // Goobstation
+            openIncisions) // Goobstation
     {
         Solutions = solutions;
     }

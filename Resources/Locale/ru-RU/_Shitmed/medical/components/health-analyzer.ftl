@@ -32,7 +32,6 @@ condition-body-bleeding-LeftFoot = • Кровотечение из левой 
 condition-body-bleeding-RightFoot = • Кровотечение из правой стопы у { $entity }.
 
 health-analyzer-upload-medical-record = Загрузить в медкарту
-health-analyzer-condition-welding-blindness = • Сварочная слепота.
 health-analyzer-condition-open-incision-Head = • Незакрытый разрез на голове.
 health-analyzer-condition-open-incision-Chest = • Незакрытый разрез на груди.
 health-analyzer-condition-open-incision-Groin = • Незакрытый разрез в паховой области.

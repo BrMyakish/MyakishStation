@@ -43,7 +43,6 @@ using Content.Shared.Mobs.Systems;
 using Content.Shared.Damage;
 using Content.Server.Chat.Systems;
 using Content.Shared.Chat;
-using Content.Shared.Eye.Blinding.Components;
 using Content.Shared._Shitmed.Medical.Surgery.Steps.Parts;
 using Robust.Shared.Prototypes;
 
@@ -342,15 +341,6 @@ public sealed class HealthAnalyzerSystem : EntitySystem
         // Goobstation start
         var bodyStatus = _woundSystem.GetDamageableStatesOnBody(target); // Goob
         var openIncisions = FetchOpenIncisions(body);
-        var weldingEyeDamage = 0;
-        var weldingEyeDamageMax = 0;
-        if (TryComp<BlindableComponent>(target, out var blindable))
-        {
-            // Permanent blindness/poor vision lives in the card as a trait, not in a dynamic scan.
-            weldingEyeDamage = Math.Max(0, blindable.EyeDamage - blindable.MinDamage);
-            weldingEyeDamageMax = Math.Max(0, blindable.MaxDamage - blindable.MinDamage);
-        }
-
         var canUploadMedicalRecord = analyzerComp.ScannedBy is { } scannedBy &&
                                      !Deleted(scannedBy) &&
                                      _access.FindAccessTags(scannedBy).Contains(MedicalAccess);
@@ -383,8 +373,6 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     pain,
                     bloodLow, // Goobstation
                     openIncisions,
-                    weldingEyeDamage,
-                    weldingEyeDamageMax,
                     part != null ? GetNetEntity(part) : null
                 ));
                 break;
@@ -402,9 +390,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     vitalDamage, // Goobstation
                     bodyStatus,
                     organs,
-                    openIncisions,
-                    weldingEyeDamage,
-                    weldingEyeDamageMax
+                    openIncisions
                 ));
                 break;
 
@@ -421,9 +407,7 @@ public sealed class HealthAnalyzerSystem : EntitySystem
                     vitalDamage, // Goobstation
                     bodyStatus,
                     chemicals,
-                    openIncisions,
-                    weldingEyeDamage,
-                    weldingEyeDamageMax
+                    openIncisions
                 ));
                 break;
         }

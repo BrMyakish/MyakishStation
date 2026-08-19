@@ -1,0 +1,23 @@
+<!--
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                      xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                      Title="{Loc 'medical-notes-window-title'}"
+                      MinSize="480 300">
+    <BoxContainer Orientation="Vertical" Margin="8">
+        <Label Name="PatientName" StyleClasses="LabelBig" />
+        <Label Name="PatientJob" Margin="0 0 0 8" />
+        <Label Text="{Loc 'medical-records-console-doctor-notes'}"
+               StyleClasses="LabelHeading" />
+        <TextEdit Name="Notes"
+                  MinHeight="180"
+                  VerticalExpand="True"
+                  HorizontalExpand="True" />
+        <Button Name="SaveButton"
+                Text="{Loc 'medical-records-console-save-notes'}"
+                HorizontalAlignment="Right"
+                Margin="0 8 0 0" />
+    </BoxContainer>
+</controls:FancyWindow>

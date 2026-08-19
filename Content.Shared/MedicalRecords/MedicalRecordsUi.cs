@@ -11,6 +11,12 @@ public enum MedicalRecordsConsoleKey : byte
     Key,
 }
 
+[Serializable, NetSerializable]
+public enum MedicalNotesUiKey : byte
+{
+    Key,
+}
+
 /// <summary>
 /// Only the public demographic subset needed by the medical console is sent to viewers.
 /// </summary>
@@ -62,4 +68,18 @@ public sealed class MedicalRecordUpdateExaminationMessage(uint id, string title,
 public sealed class MedicalRecordDeleteExaminationMessage(uint id) : BoundUserInterfaceMessage
 {
     public readonly uint Id = id;
+}
+
+[Serializable, NetSerializable]
+public sealed class MedicalNotesState(string patientName, string patientJob, string notes) : BoundUserInterfaceState
+{
+    public readonly string PatientName = patientName;
+    public readonly string PatientJob = patientJob;
+    public readonly string Notes = notes;
+}
+
+[Serializable, NetSerializable]
+public sealed class MedicalNotesSetMessage(string notes) : BoundUserInterfaceMessage
+{
+    public readonly string Notes = notes;
 }
