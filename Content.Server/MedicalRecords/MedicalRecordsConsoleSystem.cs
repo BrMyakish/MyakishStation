@@ -126,14 +126,15 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
         if (!TryGetEditableKey(ent, msg.Actor, out var key))
             return;
 
+        var examinationId = msg.Id;
         if (!_records.TryGetRecord<MedicalRecord>(key, out var medicalRecord) ||
-            medicalRecord.Examinations.FirstOrDefault(x => x.Id == msg.Id) is not { } examination)
+            medicalRecord.Examinations.FirstOrDefault(x => x.Id == examinationId) is not { } examination)
         {
             return;
         }
 
         var examinationTitle = examination.Title;
-        if (_medicalRecords.TryDeleteExamination(key, msg.Id))
+        if (_medicalRecords.TryDeleteExamination(key, examinationId))
         {
             UpdateUi(ent);
             NotifyExaminationDeleted(key, msg.Actor, examinationTitle, ent);
@@ -260,8 +261,15 @@ public sealed class MedicalRecordsConsoleSystem : EntitySystem
             return false;
 
         key = new StationRecordKey(id, station);
-        return _records.TryGetRecord(key, out generalRecord) &&
-               _records.TryGetRecord(key, out medicalRecord);
+        if (!_records.TryGetRecord(key, out GeneralStationRecord? foundGeneralRecord))
+            return false;
+
+        if (!_records.TryGetRecord(key, out MedicalRecord? foundMedicalRecord))
+            return false;
+
+        generalRecord = foundGeneralRecord;
+        medicalRecord = foundMedicalRecord;
+        return true;
     }
 
     private void NotifyNotesUpdated(
